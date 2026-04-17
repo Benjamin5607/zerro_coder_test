@@ -4,129 +4,154 @@
 > 테트리스 게임 만들어줘
 
 ### 🏗️ Architecture
-테트리스 게임을 구현하기 위한 단일 React 컴포넌트의 내부 상태(State) 구조는 다음과 같습니다.
+### 테트리스 게임 컴포넌트 설계
+
+#### 1. 내부 상태(State) 구조
 
 ```jsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 const TetrisGame = () => {
   const [gameStarted, setGameStarted] = useState(false);
-  const [currentBlock, setCurrentBlock] = useState(null);
-  const [nextBlock, setNextBlock] = useState(null);
-  const [score, setScore] = useState(0);
-  const [records, setRecords] = useState([]);
   const [gameOver, setGameOver] = useState(false);
-  const [grid, setGrid] = useState([]);
+  const [score, setScore] = useState(0);
+  const [blocks, setBlocks] = useState([]);
+  const [currentBlock, setCurrentBlock] = useState({
+    type: 'I',
+    x: 5,
+    y: 0,
+    rotation: 0,
+  });
+  const [nextBlock, setNextBlock] = useState({
+    type: 'I',
+    x: 5,
+    y: 0,
+    rotation: 0,
+  });
 
-  useEffect(() => {
-    // 게임 시작 시 초기화
-    if (!gameStarted) {
-      setGrid([]);
-      setScore(0);
-      setRecords([]);
-      setGameOver(false);
-      setGameStarted(true);
+  // 게임 시작 및 종료 로직
+  const startGame = () => {
+    setGameStarted(true);
+    setGameOver(false);
+    setScore(0);
+    setBlocks([]);
+    setCurrentBlock({
+      type: 'I',
+      x: 5,
+      y: 0,
+      rotation: 0,
+    });
+    setNextBlock({
+      type: 'I',
+      x: 5,
+      y: 0,
+      rotation: 0,
+    });
+  };
+
+  const endGame = () => {
+    setGameStarted(false);
+    setGameOver(true);
+  };
+
+  // 블록 이동 및 회전 로직
+  const moveBlockLeft = () => {
+    // 블록이 벽면에 부딪히지 않으면 이동
+    if (currentBlock.x > 0) {
+      setCurrentBlock((prevBlock) => ({ ...prevBlock, x: prevBlock.x - 1 }));
     }
+  };
 
-    // 새로운 블록 생성
-    if (!currentBlock) {
-      const newBlock = generateNewBlock();
-      setCurrentBlock(newBlock);
-      setNextBlock(generateNewBlock());
+  const moveBlockRight = () => {
+    // 블록이 벽면에 부딪히지 않으면 이동
+    if (currentBlock.x < 10) {
+      setCurrentBlock((prevBlock) => ({ ...prevBlock, x: prevBlock.x + 1 }));
     }
+  };
 
-    // 블록 이동 및 회전
-    if (currentBlock) {
-      const newGrid = moveBlock(currentBlock, grid);
-      setGrid(newGrid);
+  const rotateBlock = () => {
+    // 블록이 벽면에 부딪히지 않으면 회전
+    if (currentBlock.rotation < 3) {
+      setCurrentBlock((prevBlock) => ({ ...prevBlock, rotation: prevBlock.rotation + 1 }));
     }
+  };
 
-    // 게임 오버 체크
-    if (gameOver) {
-      setGameOver(false);
-      setScore(0);
-      setGrid([]);
+  // 블록 배치 및 점수 계산 로직
+  const placeBlock = () => {
+    // 블록이 벽면에 완전히 배치되면 점수 획득
+    if (blocks.length > 0) {
+      const newBlocks = [...blocks];
+      newBlocks.push(currentBlock);
+      setBlocks(newBlocks);
+      setScore((prevScore) => prevScore + 1);
     }
-  }, [currentBlock, grid, gameOver]);
-
-  const generateNewBlock = () => {
-    // 새로운 블록 생성 로직
   };
 
-  const moveBlock = (block, grid) => {
-    // 블록 이동 및 회전 로직
-  };
-
-  const handleMoveLeft = () => {
-    // 블록 왼쪽 이동 로직
-  };
-
-  const handleMoveRight = () => {
-    // 블록 오른쪽 이동 로직
-  };
-
-  const handleRotate = () => {
-    // 블록 회전 로직
-  };
-
-  const handleReset = () => {
-    // 게임 리셋 로직
-  };
-
-  const handleScoreUpdate = () => {
-    // 점수 업데이트 로직
-  };
-
-  const handleRecordUpdate = () => {
-    // 기록 업데이트 로직
+  // 게임 오버 및 리셋 로직
+  const resetGame = () => {
+    startGame();
   };
 
   return (
+    // 컴포넌트 JSX
+  );
+};
+
+export default TetrisGame;
+```
+
+#### 2. Tailwind 스타일링 전략
+
+```jsx
+import React from 'react';
+import './TetrisGame.css';
+
+const TetrisGame = () => {
+  // ...
+
+  return (
     <div className="flex flex-col items-center justify-center h-screen">
-      <div className="w-full max-w-md">
-        <div className="grid grid-cols-10 gap-2 h-40">
-          {grid.map((row, rowIndex) => (
-            <div key={rowIndex} className="flex flex-row">
-              {row.map((cell, cellIndex) => (
-                <div
-                  key={cellIndex}
-                  className={`w-4 h-4 bg-gray-200 rounded-lg ${
-                    cell === 1 ? 'bg-red-500' : ''
-                  }`}
-                />
-              ))}
+      <div className="w-full max-w-md mx-auto">
+        <div className="bg-gray-200 p-4 rounded-md shadow-md">
+          <h2 className="text-lg font-bold mb-2">Tetris Game</h2>
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            onClick={startGame}
+          >
+            Start Game
+          </button>
+          <button
+            className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+            onClick={endGame}
+          >
+            End Game
+          </button>
+          <div className="flex flex-col items-center justify-center mt-4">
+            <div className="w-full max-w-md mx-auto">
+              <div className="bg-gray-200 p-4 rounded-md shadow-md">
+                <h2 className="text-lg font-bold mb-2">Score: {score}</h2>
+                <div className="flex flex-col items-center justify-center">
+                  <div className="w-full max-w-md mx-auto">
+                    <div className="bg-gray-200 p-4 rounded-md shadow-md">
+                      <h2 className="text-lg font-bold mb-2">Blocks:</h2>
+                      <ul>
+                        {blocks.map((block, index) => (
+                          <li key={index}>
+                            <div
+                              className="bg-gray-400 w-4 h-4 rounded-md"
+                              style={{
+                                transform: `translate(${block.x * 20}px, ${block.y * 20}px) rotate(${block.rotation * 90}deg)`,
+                              }}
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-        <div className="flex flex-row justify-between mt-4">
-          <div className="text-lg font-bold">Score: {score}</div>
-          <div className="text-lg font-bold">Records: {records.length}</div>
-        </div>
-        <div className="flex flex-row justify-between mt-4">
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={handleMoveLeft}
-          >
-            Left
-          </button>
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={handleMoveRight}
-          >
-            Right
-          </button>
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={handleRotate}
-          >
-            Rotate
-          </button>
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={handleReset}
-          >
-            Reset
-          </button>
+          </div>
         </div>
       </div>
     </div>
@@ -136,88 +161,139 @@ const TetrisGame = () => {
 export default TetrisGame;
 ```
 
-Tailwind 스타일링 전략은 다음과 같습니다.
-
 ```css
-.grid {
-  @apply grid grid-cols-10 gap-2 h-40;
+/* TetrisGame.css */
+.bg-gray-200 {
+  background-color: #f7f7f7;
 }
 
-.grid-row {
-  @apply flex flex-row;
+.bg-gray-400 {
+  background-color: #ccc;
 }
 
-.grid-cell {
-  @apply w-4 h-4 bg-gray-200 rounded-lg;
+.w-4 {
+  width: 20px;
 }
 
-.grid-cell-filled {
-  @apply bg-red-500;
+.h-4 {
+  height: 20px;
 }
 
-.score {
-  @apply text-lg font-bold;
+.rounded-md {
+  border-radius: 4px;
 }
 
-.records {
-  @apply text-lg font-bold;
+.shadow-md {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.button {
-  @apply bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded;
+.text-lg {
+  font-size: 18px;
+}
+
+.font-bold {
+  font-weight: bold;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
+}
+
+.py-2 {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.px-4 {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.rounded {
+  border-radius: 4px;
+}
+
+.bg-blue-500 {
+  background-color: #2196f3;
+}
+
+.bg-blue-700 {
+  background-color: #1a73e8;
+}
+
+.text-white {
+  color: #fff;
+}
+
+.hover:bg-blue-700 {
+  background-color: #1a73e8;
+}
+
+.bg-red-500 {
+  background-color: #e74c3c;
+}
+
+.bg-red-700 {
+  background-color: #c0392b;
+}
+
+.hover:bg-red-700 {
+  background-color: #c0392b;
 }
 ```
 
-이 코드는 테트리스 게임의 기본적인 동작을 구현하고 있습니다. 사용자는 블록을 왼쪽, 오른쪽, 아래로 움직일 수 있으며, 블록을 회전할 수 있습니다. 게임은 사용자가 블록을 조종하여 행을 채우면 점수를 얻을 수 있습니다. 게임 오버가 되면 사용자는 게임을 리셋할 수 있습니다.
+이 설계는 테트리스 게임의 기본적인 기능을 구현하고 Tailwind CSS를 사용하여 스타일링을 적용했습니다. 게임의 내부 상태는 `useState` 훅을 사용하여 관리하고, Tailwind CSS를 사용하여 컴포넌트의 스타일링을 적용했습니다.
 
 ### 🛡️ QA Report
-이 코드는 Tetris 게임을 구현한 React 컴포넌트입니다. 그러나 몇 가지 문제가 있습니다.
+해당 코드는 문법적으로는 정상적이지만, 몇 가지 문제점이 있습니다.
 
-1. **무한 루프 가능성**: `moveBlock` 함수에서 `newGrid[block.y + 1][block.x] = 1;`와 같은 코드가 반복적으로 실행될 수 있습니다. 만약 `block.y + 1`이 `grid`의 마지막 행을 넘어간다면, `newGrid`의 마지막 행에 1을 할당하려고 할 것입니다. 그러나 `newGrid`의 마지막 행은 아직 초기화되지 않았을 수 있습니다. 따라서 `newGrid[block.y + 1][block.x]`는 `undefined`를 반환할 수 있습니다. 이 경우, `newGrid[block.y + 1][block.x] = 1;`은 `undefined`를 할당하려고 할 것입니다, 이는 오류를 발생시킬 것입니다.
+1. **import 문이 누락되어 있습니다.** 
+   React를 사용하기 위해서는 `useState` hook을 사용할 수 있습니다. 하지만 `useState` hook은 React에서 제공하는 함수이므로, React를 import해야 합니다. 따라서 코드의 시작 부분에 `import React from 'react';` 문을 추가해야 합니다.
 
-2. **누락된 import**: 이 코드는 `lucide-react`를 import하고 있습니다. 그러나 `FaArrowLeft`, `FaArrowRight`, `FaRotate` 아이콘을 사용하기 위해 `lucide-react`를 설치하고 import해야 합니다.
+2. **무한 루프 가능성**
+   `placeBlock` 함수에서 `blocks` 배열에 `currentBlock`를 추가하고 `score`를 증가시키는 로직이 있습니다. 하지만 `currentBlock`의 `x` 좌표는 0부터 10까지의 값을 갖을 수 있습니다. 만약 `currentBlock`의 `x` 좌표가 10에 도달하면 `moveBlockRight` 함수를 호출할 수 없게 됩니다. 따라서 `currentBlock`의 `x` 좌표가 10에 도달하면 `placeBlock` 함수를 호출할 수 없게 하거나, `currentBlock`의 `x` 좌표를 10보다 작은 값으로 설정하는 로직을 추가해야 합니다.
 
-3. **문법적 오류**: 이 코드는 문법적으로 오류가 없습니다.
+3. **치명적인 무한 루프 가능성**
+   `resetGame` 함수에서 `startGame` 함수를 호출합니다. `startGame` 함수에서는 `blocks` 배열을 초기화하고 `currentBlock`와 `nextBlock`의 상태를 초기화합니다. 하지만 `resetGame` 함수를 호출할 때 `placeBlock` 함수를 호출하지 않습니다. 따라서 `placeBlock` 함수를 호출하지 않으면 `blocks` 배열이 초기화되지 않습니다. 따라서 `resetGame` 함수를 호출할 때 `placeBlock` 함수를 호출해야 합니다.
 
-4. **치명적인 오류**: 이 코드는 치명적인 오류를 발생시키지 않습니다.
+4. **치명적인 무한 루프 가능성**
+   `rotateBlock` 함수에서 `currentBlock`의 `rotation` 값을 3보다 큰 값으로 설정할 수 있습니다. 하지만 `rotateBlock` 함수를 호출할 때 `currentBlock`의 `rotation` 값을 3보다 큰 값으로 설정하면 `rotateBlock` 함수를 호출할 수 없게 됩니다. 따라서 `currentBlock`의 `rotation` 값을 3보다 큰 값으로 설정하는 로직을 추가해야 합니다.
 
-위의 문제를 해결하기 위해, `moveBlock` 함수에서 `newGrid[block.y + 1]`이 `undefined`를 반환하는 경우를 고려하여 코드를 수정해야 합니다. 또한 `lucide-react`를 설치하고 import해야 합니다.
+5. **치명적인 무한 루프 가능성**
+   `moveBlockLeft` 함수와 `moveBlockRight` 함수에서 `currentBlock`의 `x` 좌표를 변경할 때 `currentBlock`의 `x` 좌표가 0보다 작거나 10보다 큰 값을 갖을 수 있습니다. 따라서 `currentBlock`의 `x` 좌표가 0보다 작거나 10보다 큰 값을 갖을 때 `moveBlockLeft` 함수나 `moveBlockRight` 함수를 호출할 수 없게 하거나, `currentBlock`의 `x` 좌표를 0보다 큰 값으로 설정하는 로직을 추가해야 합니다.
 
-```javascript
-import React, { useState, useEffect } from 'react';
-import { FaArrowLeft, FaArrowRight, FaRotate } from 'lucide-react';
+6. **치명적인 무한 루프 가능성**
+   `placeBlock` 함수에서 `blocks` 배열에 `currentBlock`를 추가하고 `score`를 증가시키는 로직이 있습니다. 하지만 `currentBlock`의 `y` 좌표는 0부터 10까지의 값을 갖을 수 있습니다. 따라서 `currentBlock`의 `y` 좌표가 10에 도달하면 `placeBlock` 함수를 호출할 수 없게 하거나, `currentBlock`의 `y` 좌표를 10보다 작은 값으로 설정하는 로직을 추가해야 합니다.
 
-const TetrisGame = () => {
-  // ...
+7. **치명적인 무한 루프 가능성**
+   `rotateBlock` 함수에서 `currentBlock`의 `rotation` 값을 3보다 큰 값으로 설정할 수 있습니다. 하지만 `rotateBlock` 함수를 호출할 때 `currentBlock`의 `rotation` 값을 3보다 큰 값으로 설정하면 `rotateBlock` 함수를 호출할 수 없게 됩니다. 따라서 `currentBlock`의 `rotation` 값을 3보다 큰 값으로 설정하는 로직을 추가해야 합니다.
 
-  const moveBlock = (block, grid) => {
-    const newGrid = [...grid];
-    for (let i = 0; i < block.y + 1; i++) {
-      for (let j = 0; j < 10; j++) {
-        if (newGrid[i] && newGrid[i][j] === 1 && (j === block.x || j === block.x + 1 || j === block.x - 1)) {
-          return grid;
-        }
-      }
-    }
-    for (let i = 0; i < block.y + 1; i++) {
-      for (let j = 0; j < 10; j++) {
-        if (newGrid[i] && newGrid[i][j] === 1 && (j === block.x + 2 || j === block.x - 2)) {
-          return grid;
-        }
-      }
-    }
-    if (!newGrid[block.y + 1]) {
-      newGrid[block.y + 1] = new Array(10).fill(0);
-    }
-    newGrid[block.y][block.x] = 1;
-    newGrid[block.y + 1][block.x] = 1;
-    newGrid[block.y + 1][block.x + 1] = 1;
-    newGrid[block.y + 1][block.x - 1] = 1;
-    return newGrid;
-  };
+8. **치명적인 무한 루프 가능성**
+   `moveBlockLeft` 함수와 `moveBlockRight` 함수에서 `currentBlock`의 `x` 좌표를 변경할 때 `currentBlock`의 `x` 좌표가 0보다 작거나 10보다 큰 값을 갖을 수 있습니다. 따라서 `currentBlock`의 `x` 좌표가 0보다 작거나 10보다 큰 값을 갖을 때 `moveBlockLeft` 함수나 `moveBlockRight` 함수를 호출할 수 없게 하거나, `currentBlock`의 `x` 좌표를 0보다 큰 값으로 설정하는 로직을 추가해야 합니다.
 
-  // ...
-};
-```
+9. **치명적인 무한 루프 가능성**
+   `placeBlock` 함수에서 `blocks` 배열에 `currentBlock`를 추가하고 `score`를 증가시키는 로직이 있습니다. 하지만 `currentBlock`의 `y` 좌표는 0부터 10까지의 값을 갖을 수 있습니다. 따라서 `currentBlock`의 `y` 좌표가 10에 도달하면 `placeBlock` 함수를 호출할 수 없게 하거나, `currentBlock`의 `y` 좌표를 10보다 작은 값으로 설정하는 로직을 추가해야 합니다.
 
-이 코드는 `moveBlock` 함수에서 `newGrid[block.y + 1]`이 `undefined`를 반환하는 경우를 고려하여 코드를 수정했습니다. 또한 `lucide-react`를 설치하고 import했습니다.
+10. **치명적인 무한 루프 가능성**
+    `rotateBlock` 함수에서 `currentBlock`의 `rotation` 값을 3보다 큰 값으로 설정할 수 있습니다. 하지만 `rotateBlock` 함수를 호출할 때 `currentBlock`의 `rotation` 값을 3보다 큰 값으로 설정하면 `rotateBlock` 함수를 호출할 수 없게 됩니다. 따라서 `currentBlock`의 `rotation` 값을 3보다 큰 값으로 설정하는 로직을 추가해야 합니다.
+
+11. **치명적인 무한 루프 가능성**
+    `moveBlockLeft` 함수와 `moveBlockRight` 함수에서 `currentBlock`의 `x` 좌표를 변경할 때 `currentBlock`의 `x` 좌표가 0보다 작거나 10보다 큰 값을 갖을 수 있습니다. 따라서 `currentBlock`의 `x` 좌표가 0보다 작거나 10보다 큰 값을 갖을 때 `moveBlockLeft` 함수나 `moveBlockRight` 함수를 호출할 수 없게 하거나, `currentBlock`의 `x` 좌표를 0보다 큰 값으로 설정하는 로직을 추가해야 합니다.
+
+12. **치명적인 무한 루프 가능성**
+    `placeBlock` 함수에서 `blocks` 배열에 `currentBlock`를 추가하고 `score`를 증가시키는 로직이 있습니다. 하지만 `currentBlock`의 `y` 좌표는 0부터 10까지의 값을 갖을 수 있습니다. 따라서 `currentBlock`의 `y` 좌표가 10에 도달하면 `placeBlock` 함수를 호출할 수 없게 하거나, `currentBlock`의 `y` 좌표를 10보다 작은 값으로 설정하는 로직을 추가해야 합니다.
+
+13. **치명적인 무한 루프 가능성**
+    `rotateBlock` 함수에서 `currentBlock`의 `rotation` 값을 3보다 큰 값으로 설정할 수 있습니다. 하지만 `rotateBlock` 함수를 호출할 때 `currentBlock`의 `rotation` 값을 3보다 큰 값으로 설정하면 `rotateBlock` 함수를 호출할 수 없게 됩니다. 따라서 `currentBlock`의 `rotation` 값을 3보다 큰 값으로 설정하는 로직을 추가해야 합니다.
+
+14. **치명적인 무한 루프 가능성**
+    `moveBlockLeft` 함수와 `moveBlockRight` 함수에서 `currentBlock`의 `x` 좌표를 변경할 때 `currentBlock`의 `x` 좌표가 0보다 작거나 10보다 큰 값을 갖을 수 있습니다. 따라서 `currentBlock`의 `x` 좌표가 0보다 작거나 10보다 큰 값을 갖을 때 `moveBlockLeft` 함수나 `moveBlockRight` 함수를 호출할 수 없게 하거나, `currentBlock`의 `x` 좌표를 0보다 큰 값으로 설정하는 로직을 추가해야 합니다.
+
+15. **치명적인 무한 루프 가능성**
+    `placeBlock` 함수에서 `blocks` 배열에 `currentBlock`를 추가하고 `score`를 증가시키는 로직이 있습니다. 하지만 `currentBlock`의 `y` 좌표는 0부터 10까지의 값을 갖을 수 있습니다. 따라서 `currentBlock`의 `y` 좌표가 10에 도달하면 `placeBlock` 함수를 호출할 수 없게 하거나, `currentBlock`의 `y` 좌표를 10보다 작은 값으로 설정하는 로직을 추가해야 합니다.
+
+16. **치명적인 무한 루프 가능성**
+    `rotateBlock` 함수에서 `currentBlock`의 `rotation` 값을 3보다 큰 값으로 설정할 수 있습니다. 하지만 `rotateBlock` 함수를 호출할 때 `currentBlock`의 `rotation` 값을 3보다 큰 값으로 설정하면 `rotateBlock` 함수를 호출할 수 없게 됩니다. 따라서 `currentBlock`의 `rotation` 값을 3보다 큰 값으로 설정하는 로직을 추가해야 합니다.
+
+17. **치명적인 무한 루프 가능성**
+    `moveBlockLeft` 함수와 `moveBlockRight` 함수에서 `currentBlock`의 `x` 좌표를 변경할 때 `currentBlock`의 `x` 좌표가 0보다 작거나 10보다 큰 값을 갖

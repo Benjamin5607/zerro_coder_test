@@ -1,170 +1,121 @@
-import React, { useState, useEffect } from 'react';
-import { FaArrowLeft, FaArrowRight, FaRotate } from 'lucide-react';
-
-const TetrisGame = () => {
+export default function App() {
   const [gameStarted, setGameStarted] = useState(false);
-  const [currentBlock, setCurrentBlock] = useState(null);
-  const [nextBlock, setNextBlock] = useState(null);
-  const [score, setScore] = useState(0);
-  const [records, setRecords] = useState([]);
   const [gameOver, setGameOver] = useState(false);
-  const [grid, setGrid] = useState([]);
+  const [score, setScore] = useState(0);
+  const [blocks, setBlocks] = useState([]);
+  const [currentBlock, setCurrentBlock] = useState({
+    type: 'I',
+    x: 5,
+    y: 0,
+    rotation: 0,
+  });
+  const [nextBlock, setNextBlock] = useState({
+    type: 'I',
+    x: 5,
+    y: 0,
+    rotation: 0,
+  });
 
-  useEffect(() => {
-    if (!gameStarted) {
-      setGrid([]);
-      setScore(0);
-      setRecords([]);
-      setGameOver(false);
-      setGameStarted(true);
-    }
-
-    if (!currentBlock) {
-      const newBlock = generateNewBlock();
-      setCurrentBlock(newBlock);
-      setNextBlock(generateNewBlock());
-    }
-
-    if (currentBlock) {
-      const newGrid = moveBlock(currentBlock, grid);
-      setGrid(newGrid);
-    }
-
-    if (gameOver) {
-      setGameOver(false);
-      setScore(0);
-      setGrid([]);
-    }
-  }, [currentBlock, grid, gameOver]);
-
-  const generateNewBlock = () => {
-    const blockType = Math.floor(Math.random() * 7);
-    const block = {
-      type: blockType,
+  const startGame = () => {
+    setGameStarted(true);
+    setGameOver(false);
+    setScore(0);
+    setBlocks([]);
+    setCurrentBlock({
+      type: 'I',
       x: 5,
       y: 0,
       rotation: 0,
-    };
-    return block;
+    });
+    setNextBlock({
+      type: 'I',
+      x: 5,
+      y: 0,
+      rotation: 0,
+    });
   };
 
-  const moveBlock = (block, grid) => {
-    const newGrid = [...grid];
-    for (let i = 0; i < block.y + 1; i++) {
-      for (let j = 0; j < 10; j++) {
-        if (newGrid[i][j] === 1 && (j === block.x || j === block.x + 1 || j === block.x - 1)) {
-          return grid;
-        }
-      }
+  const endGame = () => {
+    setGameStarted(false);
+    setGameOver(true);
+  };
+
+  const moveBlockLeft = () => {
+    if (currentBlock.x > 0) {
+      setCurrentBlock((prevBlock) => ({ ...prevBlock, x: prevBlock.x - 1 }));
     }
-    for (let i = 0; i < block.y + 1; i++) {
-      for (let j = 0; j < 10; j++) {
-        if (newGrid[i][j] === 1 && (j === block.x + 2 || j === block.x - 2)) {
-          return grid;
-        }
-      }
+  };
+
+  const moveBlockRight = () => {
+    if (currentBlock.x < 10) {
+      setCurrentBlock((prevBlock) => ({ ...prevBlock, x: prevBlock.x + 1 }));
     }
-    newGrid[block.y][block.x] = 1;
-    newGrid[block.y + 1][block.x] = 1;
-    newGrid[block.y + 1][block.x + 1] = 1;
-    newGrid[block.y + 1][block.x - 1] = 1;
-    return newGrid;
   };
 
-  const handleMoveLeft = () => {
-    const newBlock = { ...currentBlock };
-    newBlock.x -= 1;
-    const newGrid = moveBlock(newBlock, grid);
-    setCurrentBlock(newBlock);
-    setGrid(newGrid);
+  const rotateBlock = () => {
+    if (currentBlock.rotation < 3) {
+      setCurrentBlock((prevBlock) => ({ ...prevBlock, rotation: prevBlock.rotation + 1 }));
+    }
   };
 
-  const handleMoveRight = () => {
-    const newBlock = { ...currentBlock };
-    newBlock.x += 1;
-    const newGrid = moveBlock(newBlock, grid);
-    setCurrentBlock(newBlock);
-    setGrid(newGrid);
+  const placeBlock = () => {
+    if (blocks.length > 0) {
+      const newBlocks = [...blocks];
+      newBlocks.push(currentBlock);
+      setBlocks(newBlocks);
+      setScore((prevScore) => prevScore + 1);
+    }
   };
 
-  const handleRotate = () => {
-    const newBlock = { ...currentBlock };
-    newBlock.rotation += 1;
-    const newGrid = moveBlock(newBlock, grid);
-    setCurrentBlock(newBlock);
-    setGrid(newGrid);
-  };
-
-  const handleReset = () => {
-    setGrid([]);
-    setScore(0);
-    setRecords([]);
-    setGameOver(false);
-    setGameStarted(true);
-  };
-
-  const handleScoreUpdate = () => {
-    setScore(score + 1);
-  };
-
-  const handleRecordUpdate = () => {
-    const newRecords = [...records];
-    newRecords.push(score);
-    newRecords.sort((a, b) => b - a);
-    newRecords.splice(10);
-    setRecords(newRecords);
+  const resetGame = () => {
+    startGame();
   };
 
   return (
     <div className="flex flex-col items-center justify-center h-screen">
-      <div className="w-full max-w-md">
-        <div className="grid grid-cols-10 gap-2 h-40">
-          {grid.map((row, rowIndex) => (
-            <div key={rowIndex} className="flex flex-row">
-              {row.map((cell, cellIndex) => (
-                <div
-                  key={cellIndex}
-                  className={`w-4 h-4 bg-gray-200 rounded-lg ${
-                    cell === 1 ? 'bg-red-500' : ''
-                  }`}
-                />
-              ))}
+      <div className="w-full max-w-md mx-auto">
+        <div className="bg-gray-200 p-4 rounded-md shadow-md">
+          <h2 className="text-lg font-bold mb-2">Tetris Game</h2>
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            onClick={startGame}
+          >
+            Start Game
+          </button>
+          <button
+            className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+            onClick={endGame}
+          >
+            End Game
+          </button>
+          <div className="flex flex-col items-center justify-center mt-4">
+            <div className="w-full max-w-md mx-auto">
+              <div className="bg-gray-200 p-4 rounded-md shadow-md">
+                <h2 className="text-lg font-bold mb-2">Score: {score}</h2>
+                <div className="flex flex-col items-center justify-center">
+                  <div className="w-full max-w-md mx-auto">
+                    <div className="bg-gray-200 p-4 rounded-md shadow-md">
+                      <h2 className="text-lg font-bold mb-2">Blocks:</h2>
+                      <ul>
+                        {blocks.map((block, index) => (
+                          <li key={index}>
+                            <div
+                              className="bg-gray-400 w-4 h-4 rounded-md"
+                              style={{
+                                transform: `translate(${block.x * 20}px, ${block.y * 20}px) rotate(${block.rotation * 90}deg)`,
+                              }}
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-        <div className="flex flex-row justify-between mt-4">
-          <div className="text-lg font-bold">Score: {score}</div>
-          <div className="text-lg font-bold">Records: {records.length}</div>
-        </div>
-        <div className="flex flex-row justify-between mt-4">
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={handleMoveLeft}
-          >
-            <FaArrowLeft />
-          </button>
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={handleMoveRight}
-          >
-            <FaArrowRight />
-          </button>
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={handleRotate}
-          >
-            <FaRotate />
-          </button>
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={handleReset}
-          >
-            Reset
-          </button>
+          </div>
         </div>
       </div>
     </div>
   );
-};
-
-export default TetrisGame;
+}
