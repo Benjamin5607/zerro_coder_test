@@ -1,194 +1,116 @@
 import React, { useState, useEffect } from 'react';
-import { FaArrowLeft, FaArrowRight, FaArrowDown, FaArrowUp } from 'lucide-react';
+import { FaArrowLeft, FaArrowRight, FaRotate } from 'lucide-react';
 
-const App = () => {
-  const [blocks, setBlocks] = useState({
-    currentBlock: {
-      type: 'I',
-      x: 5,
-      y: 0,
-      rotation: 0,
-    },
-    grid: Array(20).fill(0).map(() => Array(10).fill(0)),
+const TetrisGame = () => {
+  const [board, setBoard] = useState([]);
+  const [currentBlock, setCurrentBlock] = useState({
+    shape: 'I',
+    color: 'red',
+    x: 5,
+    y: 0,
   });
+  const [score, setScore] = useState(0);
+  const [record, setRecord] = useState({});
 
-  const BLOCK_SIZES = {
-    I: [4, 1],
-    J: [3, 2],
-    L: [3, 2],
-    O: [2, 2],
-    S: [3, 2],
-    T: [3, 2],
-    Z: [3, 2],
-  };
-
-  const rotateBlock = (block) => {
-    const newRotation = (block.rotation + 1) % 4;
-    const newBlock = {
-      ...block,
-      rotation: newRotation,
-    };
-
-    if (isRotationPossible(newBlock, blocks.grid)) {
-      return newBlock;
-    }
-
-    return {
-      ...block,
-      rotation: (block.rotation - 1 + 4) % 4,
-    };
-  };
-
-  const moveBlock = (block, dx, dy) => {
-    const newBlock = {
-      ...block,
-      x: block.x + dx,
-      y: block.y + dy,
-    };
-
-    if (newBlock.x < 0 || newBlock.x + BLOCK_SIZES[block.type][0] > 10) {
-      return block;
-    }
-
-    if (newBlock.y < 0 || newBlock.y + BLOCK_SIZES[block.type][1] > 20) {
-      return block;
-    }
-
-    return newBlock;
-  };
-
-  const dropBlock = (block) => {
-    const newBlock = {
-      ...block,
-      y: block.y + 1,
-    };
-
-    if (newBlock.y + BLOCK_SIZES[block.type][1] > 20) {
-      return block;
-    }
-
-    return newBlock;
-  };
-
-  const checkCollision = (block, grid) => {
-    for (let i = 0; i < BLOCK_SIZES[block.type][1]; i++) {
-      for (let j = 0; j < BLOCK_SIZES[block.type][0]; j++) {
-        if (grid[block.y + i][block.x + j] === 1) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  };
-
-  const isRotationPossible = (block, grid) => {
-    const newBlock = rotateBlock(block);
-
-    for (let i = 0; i < BLOCK_SIZES[newBlock.type][1]; i++) {
-      for (let j = 0; j < BLOCK_SIZES[newBlock.type][0]; j++) {
-        if (newBlock.y + i < 0 || newBlock.y + i + BLOCK_SIZES[newBlock.type][1] > 20) {
-          return false;
-        }
-
-        if (newBlock.x + j < 0 || newBlock.x + j + BLOCK_SIZES[newBlock.type][0] > 10) {
-          return false;
-        }
-
-        if (grid[newBlock.y + i][newBlock.x + j] === 1) {
-          return false;
-        }
-      }
-    }
-
-    return true;
-  };
-
-  const updateBlockPosition = (block, dx, dy) => {
-    const newBlock = moveBlock(block, dx, dy);
-
-    if (checkCollision(newBlock, blocks.grid)) {
-      return block;
-    }
-
-    return newBlock;
-  };
-
-  const updateBlockDrop = (block) => {
-    const newBlock = dropBlock(block);
-
-    if (checkCollision(newBlock, blocks.grid)) {
-      return block;
-    }
-
-    return newBlock;
-  };
-
-  const handleUserInput = (event) => {
-    switch (event.key) {
-      case 'ArrowLeft':
-        setBlocks((prevBlocks) => ({
-          ...prevBlocks,
-          currentBlock: updateBlockPosition(prevBlocks.currentBlock, -1, 0),
-        }));
-        break;
-      case 'ArrowRight':
-        setBlocks((prevBlocks) => ({
-          ...prevBlocks,
-          currentBlock: updateBlockPosition(prevBlocks.currentBlock, 1, 0),
-        }));
-        break;
-      case 'ArrowDown':
-        setBlocks((prevBlocks) => ({
-          ...prevBlocks,
-          currentBlock: updateBlockDrop(prevBlocks.currentBlock),
-        }));
-        break;
-      case 'ArrowUp':
-        setBlocks((prevBlocks) => ({
-          ...prevBlocks,
-          currentBlock: rotateBlock(prevBlocks.currentBlock),
-        }));
-        break;
-      default:
-        break;
-    }
-  };
+  const blockShapes = ['I', 'J', 'L', 'O', 'S', 'T', 'Z'];
+  const blockColors = ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'pink'];
 
   useEffect(() => {
-    document.addEventListener('keydown', handleUserInput);
-
-    return () => {
-      document.removeEventListener('keydown', handleUserInput);
-    };
+    const initBoard = Array(20).fill(0).map(() => Array(10).fill(0));
+    setBoard(initBoard);
   }, []);
 
+  const createBlock = () => {
+    const shape = blockShapes[Math.floor(Math.random() * blockShapes.length)];
+    const color = blockColors[Math.floor(Math.random() * blockColors.length)];
+    const x = Math.floor(Math.random() * 10);
+    const y = 0;
+    setCurrentBlock({ shape, color, x, y });
+  };
+
+  const moveBlock = (direction) => {
+    if (direction === 'left' && currentBlock.x > 0) {
+      setCurrentBlock((prevBlock) => ({ ...prevBlock, x: prevBlock.x - 1 }));
+    } else if (direction === 'right' && currentBlock.x < 9) {
+      setCurrentBlock((prevBlock) => ({ ...prevBlock, x: prevBlock.x + 1 }));
+    }
+  };
+
+  const rotateBlock = () => {
+    const shape = currentBlock.shape;
+    const color = currentBlock.color;
+    const x = currentBlock.x;
+    const y = currentBlock.y;
+    if (shape === 'I') {
+      setCurrentBlock({ shape: 'I', color, x, y });
+    } else if (shape === 'J') {
+      setCurrentBlock({ shape: 'L', color, x, y });
+    } else if (shape === 'L') {
+      setCurrentBlock({ shape: 'J', color, x, y });
+    } else if (shape === 'O') {
+      setCurrentBlock({ shape: 'O', color, x, y });
+    } else if (shape === 'S') {
+      setCurrentBlock({ shape: 'Z', color, x, y });
+    } else if (shape === 'T') {
+      setCurrentBlock({ shape: 'T', color, x, y });
+    } else if (shape === 'Z') {
+      setCurrentBlock({ shape: 'S', color, x, y });
+    }
+  };
+
+  const fitBlock = () => {
+    const boardCopy = [...board];
+    const blockCopy = { ...currentBlock };
+    if (blockCopy.x >= 0 && blockCopy.x <= 9 && blockCopy.y >= 0 && blockCopy.y <= 19) {
+      boardCopy[blockCopy.y][blockCopy.x] = 1;
+      setBoard(boardCopy);
+      createBlock();
+    }
+  };
+
+  const calculateScore = () => {
+    const score = currentBlock.shape === 'I' ? 10 : 5;
+    setScore((prevScore) => prevScore + score);
+  };
+
   return (
-    <div className="grid grid-cols-10 gap-1">
-      {blocks.grid.map((row, rowIndex) => (
-        <div key={rowIndex} className="flex">
-          {row.map((cell, cellIndex) => (
-            <div
-              key={cellIndex}
-              className={`w-4 h-4 bg-gray-300 ${cell === 1 ? 'bg-red-500' : ''}`}
-            />
+    <div className="flex justify-center items-center h-screen">
+      <div className="w-96 h-96 border-2 border-gray-400">
+        <div className="w-full h-full grid grid-cols-10 grid-rows-20">
+          {board.map((row, rowIndex) => (
+            <div key={rowIndex} className="flex justify-center items-center">
+              {row.map((cell, cellIndex) => (
+                <div
+                  key={cellIndex}
+                  className={`w-4 h-4 ${cell === 1 ? 'bg-gray-400' : 'bg-gray-200'} ${currentBlock.x === cellIndex && currentBlock.y === rowIndex ? 'bg-red-400' : ''}`}
+                />
+              ))}
+            </div>
           ))}
         </div>
-      ))}
-      <div
-        className={`absolute top-0 left-0 w-4 h-4 bg-gray-300 ${blocks.currentBlock.type === 'I' ? 'bg-blue-500' : ''}`}
-        style={{
-          transform: `translate(${blocks.currentBlock.x * 40}px, ${blocks.currentBlock.y * 20}px) rotate(${blocks.currentBlock.rotation * 90}deg)`,
-        }}
-      />
-      <div className="absolute top-10 left-10">
-        <FaArrowLeft className="text-2xl" />
-        <FaArrowRight className="text-2xl" />
-        <FaArrowDown className="text-2xl" />
-        <FaArrowUp className="text-2xl" />
+        <div className="flex justify-center items-center mt-4">
+          <button className="px-4 py-2 bg-blue-400 hover:bg-blue-500 text-white rounded" onClick={createBlock}>
+            <FaArrowLeft />
+          </button>
+          <button className="px-4 py-2 bg-green-400 hover:bg-green-500 text-white rounded" onClick={() => moveBlock('left')}>
+            <FaArrowLeft />
+          </button>
+          <button className="px-4 py-2 bg-green-400 hover:bg-green-500 text-white rounded" onClick={() => moveBlock('right')}>
+            <FaArrowRight />
+          </button>
+          <button className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-white rounded" onClick={rotateBlock}>
+            <FaRotate />
+          </button>
+          <button className="px-4 py-2 bg-red-400 hover:bg-red-500 text-white rounded" onClick={fitBlock}>
+            맞추기
+          </button>
+        </div>
+        <div className="flex justify-center items-center mt-4">
+          <p className="text-lg font-bold">점수: {score}</p>
+        </div>
       </div>
     </div>
   );
 };
 
-export default App;
+export default TetrisGame;
