@@ -1,46 +1,38 @@
 # Zerro AI 5-Stage Project
 
 ### 🎯 사령관 지시사항
-> 프리뷰 화면에서 다음 런타임 에러가 발생했다:
-Cannot read properties of null (reading 'length')
-원인: 게임 루프에서 currentTetromino가 null일 때 길이를 읽으려고 했기 때문이다.
-조치: canMoveTetrominoDown 및 기타 관련 함수 최상단에 if (!currentTetromino) return; 같은 방어(Null check) 로직을 추가하여 에러를 막고 풀코드를 다시 작성하라.
+> 간단하게 테트리스 게임 하나 만들어봐
 
 ### 🏗️ Architecture
-* canMoveTetrominoDown
-	+ if (!currentTetromino) return;
-	+ ...
-* canMoveTetrominoLeft
-	+ if (!currentTetromino) return;
-	+ ...
-* canMoveTetrominoRight
-	+ if (!currentTetromino) return;
-	+ ...
-* canMoveTetrominoUp
-	+ if (!currentTetromino) return;
-	+ ...
-* canRotateTetromino
-	+ if (!currentTetromino) return;
-	+ ...
-* removeFullLines
-	+ if (!currentTetromino) return;
-	+ ...
-* updateGrid
-	+ if (!currentTetromino) return;
-	+ ...
-* drawTetromino
-	+ if (!currentTetromino) return;
-	+ ...
-* gameLoop
-	+ if (!currentTetromino) 
-		- currentTetromino 생성
-	+ ...
-	+ gameLoop 재귀 호출
+* 게임 화면
+	+ 격자 (10x20)
+	+ 테트로미노 생성기
+		- 이 테트로미노
+		- 지 테트로미노
+		- 스 테트로미노
+		- 제 테트로미노
+		- 오 테트로미노
+		- 자 테트로미노
+		- 토 테트로미노
+	+ 사용자 입력 처리기
+		- 왼쪽/오른쪽 키 입력 처리
+		- 아래쪽 키 입력 처리
+		- 회전 키 입력 처리
+	+ 게임 로직
+		- 테트로미노 생성 및 이동
+		- 충돌 감지 및 처리
+		- 한 줄 완성 시 삭제 및 점수 증가
+		- 게임 오버 시 점수 표시 및 재시작 옵션 제공
+	+ 사용자 설정
+		- 게임 속도 조절
+		- 음악/효과음 켜기/끄기
+	+ 점수 표시기
+	+ 재시작 옵션 제공기
 
 ### 🛡️ QA Report
-* [렌더링 태업]: 코드는 상태와 로직을 가지고 있지만, 화면에 그리드와 블록을 렌더링하는 코드가 존재한다.
-* [유령 함수/패키지]: 코드 내부에 없는 함수를 호출하거나, 존재하지 않는 패키지를 import 하는 코드는 없다.
-* [무한 루프]: useEffect 의존성 에러는 없지만, gameLoop 함수에서 setTimeout을 사용하여 무한 루프를 생성하고 있다. 이는 의도적인 동작이므로 문제는 없다.
-* [코드 짤림]: 코드가 끝까지 작성되어 있고, 닫히는 괄호로 완벽하게 끝나고 있다. 
+* [렌더링 태업]: 없음
+* [유령 함수/패키지]: `rotateMatrix` 함수에서 `currentTetromino`를 사용하지만, `currentTetromino`가 null일 때는 에러가 발생할 수 있음. `lucide-react` 패키지에서 가져온 아이콘을 사용하지 않음.
+* [무한 루프]: 없음
+* [코드 짤림]: 없음 
 
-PASS
+ PASS는 출력되지 않으며, 위의 목록에 따라 코드의 잠재적인 문제점을 수정해야 합니다.
