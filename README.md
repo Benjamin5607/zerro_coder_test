@@ -1,46 +1,31 @@
 # Zerro AI 5-Stage Project
 
 ### 🎯 사령관 지시사항
-> 프리뷰 화면에서 다음 런타임 에러가 다시 발생했다: Cannot read properties of null (reading 'length')
-발생 위치: moveTetrominoDown 함수 내부의 currentTetromino.length
-원인: 이전 수정에서 일부 함수에는 방어 로직을 넣었지만, moveTetrominoDown을 비롯해 currentTetromino를 참조하는 다른 함수들에는 Null 방어 로직이 누락되었기 때문이다.
-조치: moveTetrominoDown을 포함하여 currentTetromino 상태를 참조하여 길이나 배열을 읽는 모든 함수 최상단에 무조건 if (!currentTetromino) return; 방어 코드를 추가하라. 완벽하게 방어된 풀코드를 다시 작성하라.
+> 간단하게 테트리스 게임 하나 만들어봐
 
 ### 🏗️ Architecture
-* moveTetrominoDown
-	+ Null 방어 로직 추가: if (!currentTetromino) return;
-* rotateTetromino
-	+ Null 방어 로직 추가: if (!currentTetromino) return;
-* removeTetromino
-	+ Null 방어 로직 추가: if (!currentTetromino) return;
-* updateTetrominoPosition
-	+ Null 방어 로직 추가: if (!currentTetromino) return;
-* checkTetrominoCollision
-	+ Null 방어 로직 추가: if (!currentTetromino) return;
-* tetrominoFactory
-	+ Null 방어 로직 추가: if (!currentTetromino) return;
-* gameLoop
-	+ moveTetrominoDown
-	+ rotateTetromino
-	+ removeTetromino
-	+ updateTetrominoPosition
-	+ checkTetrominoCollision
-	+ tetrominoFactory
-* 테스트 및 컴파일
-	+ Null 방어 로직 추가 후 코드 재컴파일
-	+ 코드 테스트
-* 코드 분석
-	+ Null 방어 로직이 코드의 안정성과 신뢰성을 높이는지 확인
-	+ Null 방어 로직이 코드의 성능에 미치는 영향 분석
-	+ Null 방어 로직이 추가된 함수들의 예외 처리 및 오류 핸들링 로직 확인
-* 문서화
-	+ Null 방어 로직을 추가한 함수들의 문서화 확인
-	+ 코드의 유지보수성과 가독성을 높이기 위한 
+* 게임 화면
+	+ 격자: 10x20
+* 블록
+	+ 종류: I, J, L, O, S, T, Z
+	+ 생성: 랜덤 생성
+	+ 이동: 좌우, 하강, 회전
+* 게임 로직
+	+ 블록 제거: 한 줄 꽉 찼을 때
+	+ 점수 계산: 제거한 줄 수에 따라
+	+ 게임 오버: 상단에 블록 쌓였을 때
+* 레벨 시스템
+	+ 레벨 상승: 점수 누적
+	+ 게임 속도: 레벨 상승에 따라 증가
+* 하이스코어
+	+ 저장: 게임 종료 시
+	+ 비교: 다음 게임에 비교
 
 ### 🛡️ QA Report
-* [렌더링 태업]: 없음
-* [유령 함수/패키지]: 없음
-* [무한 루프]: 없음
-* [코드 짤림]: 없음 
+* [렌더링 태업]: 상태나 로직만 있고 화면(return)에 실질적인 UI를 그리지 않는 부분은 없음
+* [유령 함수/패키지]: 파일 내부에 없는 함수를 호출하거나, 존재하지 않는 패키지를 import 한 부분은 없음
+* [무한 루프]: useEffect 의존성 에러 등 치명적 버그는 없음
+* [코드 짤림]: 코드가 끝까지 작성되어 있음
+* [useEffect 의존성]: useEffect의 의존성 배열에 error를 포함하여 무한 루프가 발생할 가능성이 있음. error 상태가 변경될 때마다 useEffect가 재실행되며, useEffect 내에서 error 상태를 변경하면 다시 useEffect가 재실행되어 무한 루프가 발생할 수 있음. 
 
- PASS
+ PASS가 아닌 결함이 발견되었으므로 PASS는 출력하지 않음.

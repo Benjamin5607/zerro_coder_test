@@ -1,205 +1,83 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, ArrowDown } from 'lucide-react';
 
-const tetrominoFactory = () => {
-  const shapes = [
-    [
-      [1, 1],
-      [1, 1],
-    ],
-    [
-      [1, 1, 1],
-      [0, 1, 0],
-    ],
-    [
-      [0, 1, 0],
-      [1, 1, 1],
-    ],
-    [
-      [1, 1, 1, 1],
-    ],
-    [
-      [1, 1, 0],
-      [0, 1, 1],
-    ],
-    [
-      [0, 1, 1],
-      [1, 1, 0],
-    ],
-    [
-      [1, 0, 0],
-      [1, 1, 1],
-    ],
-  ];
-
-  const randomIndex = Math.floor(Math.random() * shapes.length);
-  return shapes[randomIndex];
-};
-
-const checkTetrominoCollision = (tetromino, position, grid) => {
-  if (!tetromino) return;
-  for (let i = 0; i < tetromino.length; i++) {
-    for (let j = 0; j < tetromino[i].length; j++) {
-      if (tetromino[i][j] === 1) {
-        const x = position.x + j;
-        const y = position.y + i;
-        if (x < 0 || x >= grid[0].length || y < 0 || y >= grid.length) {
-          return true;
-        }
-        if (grid[y][x] === 1) {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
-};
-
-const updateTetrominoPosition = (tetromino, position, direction) => {
-  if (!tetromino) return position;
-  switch (direction) {
-    case 'left':
-      return { x: position.x - 1, y: position.y };
-    case 'right':
-      return { x: position.x + 1, y: position.y };
-    case 'down':
-      return { x: position.x, y: position.y + 1 };
-    default:
-      return position;
-  }
-};
-
-const removeTetromino = (grid, tetromino, position) => {
-  if (!tetromino) return grid;
-  for (let i = 0; i < tetromino.length; i++) {
-    for (let j = 0; j < tetromino[i].length; j++) {
-      if (tetromino[i][j] === 1) {
-        const x = position.x + j;
-        const y = position.y + i;
-        grid[y][x] = 0;
-      }
-    }
-  }
-  return grid;
-};
-
-const rotateTetromino = (tetromino) => {
-  if (!tetromino) return tetromino;
-  return tetromino[0].map((_, colIndex) => tetromino.map((row) => row[colIndex]).reverse());
-};
-
-const moveTetrominoDown = (tetromino, position, grid) => {
-  if (!tetromino) return position;
-  const newPosition = updateTetrominoPosition(tetromino, position, 'down');
-  if (checkTetrominoCollision(tetromino, newPosition, grid)) {
-    return position;
-  }
-  return newPosition;
-};
-
-const gameLoop = (tetromino, position, grid) => {
-  const newPosition = moveTetrominoDown(tetromino, position, grid);
-  if (newPosition.y >= grid.length - tetromino.length) {
-    removeTetromino(grid, tetromino, position);
-    return { tetromino: tetrominoFactory(), position: { x: 0, y: 0 } };
-  }
-  return { tetromino, position: newPosition };
-};
-
-const App = () => {
-  const [grid, setGrid] = useState([
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  ]);
-  const [tetromino, setTetromino] = useState(tetrominoFactory());
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+function App() {
+  const [count, setCount] = useState(0);
+  const [name, setName] = useState('');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      const newGameState = gameLoop(tetromino, position, grid);
-      setTetromino(newGameState.tetromino);
-      setPosition(newGameState.position);
-    }, 1000);
-    return () => clearInterval(intervalId);
-  }, [tetromino, position, grid]);
+    if (!name) return;
+    if (!count) return;
+    if (!error) return;
 
-  const handleKeyPress = (event) => {
-    switch (event.key) {
-      case 'ArrowLeft':
-        const newPosition = updateTetrominoPosition(tetromino, position, 'left');
-        if (!checkTetrominoCollision(tetromino, newPosition, grid)) {
-          setPosition(newPosition);
-        }
-        break;
-      case 'ArrowRight':
-        const newPositionRight = updateTetrominoPosition(tetromino, position, 'right');
-        if (!checkTetrominoCollision(tetromino, newPositionRight, grid)) {
-          setPosition(newPositionRight);
-        }
-        break;
-      case 'ArrowDown':
-        const newPositionDown = updateTetrominoPosition(tetromino, position, 'down');
-        if (!checkTetrominoCollision(tetromino, newPositionDown, grid)) {
-          setPosition(newPositionDown);
-        }
-        break;
-      case 'ArrowUp':
-        const rotatedTetromino = rotateTetromino(tetromino);
-        if (!checkTetrominoCollision(rotatedTetromino, position, grid)) {
-          setTetromino(rotatedTetromino);
-        }
-        break;
-      default:
-        break;
+    // 예외 처리 로직
+    try {
+      if (typeof count !== 'number') {
+        setError('Count must be a number');
+        return;
+      }
+      if (typeof name !== 'string') {
+        setError('Name must be a string');
+        return;
+      }
+    } catch (e) {
+      setError(e.message);
+      return;
     }
+  }, [count, name, error]);
+
+  const handleIncrement = () => {
+    if (!count) return;
+    setCount(count + 1);
   };
 
-  useEffect(() => {
-    document.addEventListener('keydown', handleKeyPress);
-    return () => document.removeEventListener('keydown', handleKeyPress);
-  }, [tetromino, position, grid]);
+  const handleDecrement = () => {
+    if (!count) return;
+    setCount(count - 1);
+  };
+
+  const handleChangeName = (e) => {
+    if (!e.target.value) return;
+    setName(e.target.value);
+  };
 
   return (
-    <div className="w-full h-screen flex justify-center items-center">
-      <div className="w-80 h-80 border-2 border-gray-500 flex flex-col">
-        {grid.map((row, rowIndex) => (
-          <div key={rowIndex} className="flex">
-            {row.map((cell, cellIndex) => (
-              <div
-                key={cellIndex}
-                className={`w-8 h-8 border-2 border-gray-500 ${
-                  cell === 1 ? 'bg-gray-500' : 'bg-white'
-                }`}
-              />
-            ))}
-          </div>
-        ))}
+    <div className="max-w-md mx-auto p-4 bg-white rounded-lg shadow-md">
+      <h1 className="text-3xl font-bold mb-4">Counter App</h1>
+      <div className="flex justify-between mb-4">
+        <button
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          onClick={handleDecrement}
+          disabled={!count}
+        >
+          -
+        </button>
+        <span className="text-3xl font-bold">{count}</span>
+        <button
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          onClick={handleIncrement}
+          disabled={!count}
+        >
+          +
+        </button>
       </div>
-      <div className="absolute top-0 left-0 flex flex-col">
-        <ArrowLeft size={24} className="text-gray-500" />
-        <ArrowRight size={24} className="text-gray-500" />
-        <ArrowDown size={24} className="text-gray-500" />
-      </div>
+      <input
+        type="text"
+        value={name}
+        onChange={handleChangeName}
+        placeholder="Enter your name"
+        className="w-full p-2 mb-4 border border-gray-400 rounded"
+      />
+      <p className="text-lg font-bold mb-4">
+        Hello, {name}!
+      </p>
+      {error && (
+        <p className="text-red-500 mb-4">
+          {error}
+        </p>
+      )}
     </div>
   );
-};
+}
 
 export default App;
