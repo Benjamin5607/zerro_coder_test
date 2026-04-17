@@ -1,107 +1,194 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { FaArrowLeft, FaArrowRight, FaArrowDown, FaArrowUp } from 'lucide-react';
 
-export default function App() {
-  const { state, updateState } = useTetrisState();
+const App = () => {
+  const [blocks, setBlocks] = useState({
+    currentBlock: {
+      type: 'I',
+      x: 5,
+      y: 0,
+      rotation: 0,
+    },
+    grid: Array(20).fill(0).map(() => Array(10).fill(0)),
+  });
 
-  const handleBlockMove = (direction) => {
-    const newBlock = moveBlock(state.currentBlock, direction);
-    updateState({ currentBlock: newBlock });
+  const BLOCK_SIZES = {
+    I: [4, 1],
+    J: [3, 2],
+    L: [3, 2],
+    O: [2, 2],
+    S: [3, 2],
+    T: [3, 2],
+    Z: [3, 2],
   };
 
-  const handleBlockRotation = (rotation) => {
-    const newBlock = rotateBlock(state.currentBlock, rotation);
-    updateState({ currentBlock: newBlock });
-  };
+  const rotateBlock = (block) => {
+    const newRotation = (block.rotation + 1) % 4;
+    const newBlock = {
+      ...block,
+      rotation: newRotation,
+    };
 
-  const handleBlockFall = () => {
-    const newBlock = fallBlock(state.currentBlock, state.grid);
-    updateState({ currentBlock: newBlock });
-  };
-
-  const moveBlock = (block, direction) => {
-    switch (direction) {
-      case 'left':
-        return { ...block, x: block.x - 1 };
-      case 'right':
-        return { ...block, x: block.x + 1 };
-      default:
-        return block;
+    if (isRotationPossible(newBlock, blocks.grid)) {
+      return newBlock;
     }
+
+    return {
+      ...block,
+      rotation: (block.rotation - 1 + 4) % 4,
+    };
   };
 
-  const rotateBlock = (block, rotation) => {
-    switch (rotation) {
-      case 'clockwise':
-        return {
-          x: block.y,
-          y: -block.x,
-          color: block.color,
-          shape: block.shape,
-        };
-      case 'counter-clockwise':
-        return {
-          x: -block.y,
-          y: block.x,
-          color: block.color,
-          shape: block.shape,
-        };
-      default:
-        return block;
-    }
-  };
+  const moveBlock = (block, dx, dy) => {
+    const newBlock = {
+      ...block,
+      x: block.x + dx,
+      y: block.y + dy,
+    };
 
-  const fallBlock = (block, grid) => {
-    const newBlock = { ...block, y: block.y + 1 };
-    if (newBlock.y + newBlock.shape.length > grid.length) {
-      return { ...block, y: grid.length - newBlock.shape.length };
+    if (newBlock.x < 0 || newBlock.x + BLOCK_SIZES[block.type][0] > 10) {
+      return block;
     }
+
+    if (newBlock.y < 0 || newBlock.y + BLOCK_SIZES[block.type][1] > 20) {
+      return block;
+    }
+
     return newBlock;
   };
 
+  const dropBlock = (block) => {
+    const newBlock = {
+      ...block,
+      y: block.y + 1,
+    };
+
+    if (newBlock.y + BLOCK_SIZES[block.type][1] > 20) {
+      return block;
+    }
+
+    return newBlock;
+  };
+
+  const checkCollision = (block, grid) => {
+    for (let i = 0; i < BLOCK_SIZES[block.type][1]; i++) {
+      for (let j = 0; j < BLOCK_SIZES[block.type][0]; j++) {
+        if (grid[block.y + i][block.x + j] === 1) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
+
+  const isRotationPossible = (block, grid) => {
+    const newBlock = rotateBlock(block);
+
+    for (let i = 0; i < BLOCK_SIZES[newBlock.type][1]; i++) {
+      for (let j = 0; j < BLOCK_SIZES[newBlock.type][0]; j++) {
+        if (newBlock.y + i < 0 || newBlock.y + i + BLOCK_SIZES[newBlock.type][1] > 20) {
+          return false;
+        }
+
+        if (newBlock.x + j < 0 || newBlock.x + j + BLOCK_SIZES[newBlock.type][0] > 10) {
+          return false;
+        }
+
+        if (grid[newBlock.y + i][newBlock.x + j] === 1) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  };
+
+  const updateBlockPosition = (block, dx, dy) => {
+    const newBlock = moveBlock(block, dx, dy);
+
+    if (checkCollision(newBlock, blocks.grid)) {
+      return block;
+    }
+
+    return newBlock;
+  };
+
+  const updateBlockDrop = (block) => {
+    const newBlock = dropBlock(block);
+
+    if (checkCollision(newBlock, blocks.grid)) {
+      return block;
+    }
+
+    return newBlock;
+  };
+
+  const handleUserInput = (event) => {
+    switch (event.key) {
+      case 'ArrowLeft':
+        setBlocks((prevBlocks) => ({
+          ...prevBlocks,
+          currentBlock: updateBlockPosition(prevBlocks.currentBlock, -1, 0),
+        }));
+        break;
+      case 'ArrowRight':
+        setBlocks((prevBlocks) => ({
+          ...prevBlocks,
+          currentBlock: updateBlockPosition(prevBlocks.currentBlock, 1, 0),
+        }));
+        break;
+      case 'ArrowDown':
+        setBlocks((prevBlocks) => ({
+          ...prevBlocks,
+          currentBlock: updateBlockDrop(prevBlocks.currentBlock),
+        }));
+        break;
+      case 'ArrowUp':
+        setBlocks((prevBlocks) => ({
+          ...prevBlocks,
+          currentBlock: rotateBlock(prevBlocks.currentBlock),
+        }));
+        break;
+      default:
+        break;
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleUserInput);
+
+    return () => {
+      document.removeEventListener('keydown', handleUserInput);
+    };
+  }, []);
+
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <div className="grid grid-cols-10 gap-2">
-        {state.grid.map((row, y) => (
-          <div key={y} className="flex flex-row">
-            {row.map((block, x) => (
-              <Block
-                key={x}
-                x={x}
-                y={y}
-                color={block.color}
-                shape={block.shape}
-              />
-            ))}
-          </div>
-        ))}
+    <div className="grid grid-cols-10 gap-1">
+      {blocks.grid.map((row, rowIndex) => (
+        <div key={rowIndex} className="flex">
+          {row.map((cell, cellIndex) => (
+            <div
+              key={cellIndex}
+              className={`w-4 h-4 bg-gray-300 ${cell === 1 ? 'bg-red-500' : ''}`}
+            />
+          ))}
+        </div>
+      ))}
+      <div
+        className={`absolute top-0 left-0 w-4 h-4 bg-gray-300 ${blocks.currentBlock.type === 'I' ? 'bg-blue-500' : ''}`}
+        style={{
+          transform: `translate(${blocks.currentBlock.x * 40}px, ${blocks.currentBlock.y * 20}px) rotate(${blocks.currentBlock.rotation * 90}deg)`,
+        }}
+      />
+      <div className="absolute top-10 left-10">
+        <FaArrowLeft className="text-2xl" />
+        <FaArrowRight className="text-2xl" />
+        <FaArrowDown className="text-2xl" />
+        <FaArrowUp className="text-2xl" />
       </div>
-      <BlockRotation block={state.currentBlock} rotation={state.rotation} />
-      <BlockFall block={state.currentBlock} grid={state.grid} updateState={updateState} />
-      <Score state={state} updateState={updateState} />
-      <button
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        onClick={() => handleBlockMove('left')}
-      >
-        Left
-      </button>
-      <button
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        onClick={() => handleBlockMove('right')}
-      >
-        Right
-      </button>
-      <button
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        onClick={() => handleBlockRotation('clockwise')}
-      >
-        Clockwise
-      </button>
-      <button
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        onClick={() => handleBlockFall()}
-      >
-        Fall
-      </button>
     </div>
   );
-}
+};
+
+export default App;
