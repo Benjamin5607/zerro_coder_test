@@ -1,116 +1,158 @@
 import React, { useState, useEffect } from 'react';
-import { FaArrowLeft, FaArrowRight, FaRotate } from 'lucide-react';
 
-const TetrisGame = () => {
-  const [board, setBoard] = useState([]);
-  const [currentBlock, setCurrentBlock] = useState({
-    shape: 'I',
-    color: 'red',
-    x: 5,
+const initialState = {
+  currentBlock: {
+    x: 0,
     y: 0,
-  });
-  const [score, setScore] = useState(0);
-  const [record, setRecord] = useState({});
+    rotation: 0,
+    shape: [
+      [1, 1, 1, 1],
+    ],
+    color: 'blue',
+  },
+  grid: Array(20).fill(0).map(() => Array(10).fill(false)),
+  score: 0,
+  gameOver: false,
+};
 
-  const blockShapes = ['I', 'J', 'L', 'O', 'S', 'T', 'Z'];
-  const blockColors = ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'pink'];
+function App() {
+  const [state, setState] = useState(initialState);
 
   useEffect(() => {
-    const initBoard = Array(20).fill(0).map(() => Array(10).fill(0));
-    setBoard(initBoard);
-  }, []);
+    const createBlock = () => {
+      const x = Math.floor(Math.random() * 10);
+      const y = 0;
+      const rotation = Math.floor(Math.random() * 4);
+      const shape = getShape(rotation);
+      const color = getRandomColor();
+      setState((prev) => ({ ...prev, currentBlock: { x, y, rotation, shape, color } }));
+    };
 
-  const createBlock = () => {
-    const shape = blockShapes[Math.floor(Math.random() * blockShapes.length)];
-    const color = blockColors[Math.floor(Math.random() * blockColors.length)];
-    const x = Math.floor(Math.random() * 10);
-    const y = 0;
-    setCurrentBlock({ shape, color, x, y });
-  };
+    const moveBlock = () => {
+      const { currentBlock } = state;
+      const { x, y, rotation } = currentBlock;
+      const { shape } = currentBlock;
+      const newShape = getNewShape(shape, rotation);
+      const newX = x + 1;
+      const newY = y;
+      setState((prev) => ({ ...prev, currentBlock: { x: newX, y: newY, rotation, shape: newShape } }));
+    };
 
-  const moveBlock = (direction) => {
-    if (direction === 'left' && currentBlock.x > 0) {
-      setCurrentBlock((prevBlock) => ({ ...prevBlock, x: prevBlock.x - 1 }));
-    } else if (direction === 'right' && currentBlock.x < 9) {
-      setCurrentBlock((prevBlock) => ({ ...prevBlock, x: prevBlock.x + 1 }));
+    const checkGameOver = () => {
+      const { currentBlock } = state;
+      const { x, y, shape } = currentBlock;
+      if (y >= 20) {
+        setState((prev) => ({ ...prev, gameOver: true }));
+      }
+    };
+
+    const checkLineClear = () => {
+      const { grid } = state;
+      const newGrid = [];
+      grid.forEach((row, y) => {
+        const newRow = [];
+        row.forEach((block, x) => {
+          if (block) {
+            const { shape } = state.currentBlock;
+            const newShape = getNewShape(shape, state.currentBlock.rotation);
+            if (newShape[x] && newShape[x][y]) {
+              newRow.push(block);
+            } else {
+              newRow.push(false);
+            }
+          } else {
+            newRow.push(false);
+          }
+        });
+        newGrid.push(newRow);
+      });
+      setState((prev) => ({ ...prev, grid: newGrid }));
+    };
+
+    const updateScore = () => {
+      const { score } = state;
+      setState((prev) => ({ ...prev, score: score + 1 }));
+    };
+
+    const intervalId = setInterval(() => {
+      moveBlock();
+      checkGameOver();
+      checkLineClear();
+      updateScore();
+    }, 1000);
+
+    createBlock();
+
+    return () => clearInterval(intervalId);
+  }, [state]);
+
+  const getShape = (rotation) => {
+    switch (rotation) {
+      case 0:
+        return [
+          [1, 1, 1, 1],
+        ];
+      case 1:
+        return [
+          [1],
+          [1, 1, 1],
+        ];
+      case 2:
+        return [
+          [1, 1],
+          [1, 1],
+        ];
+      case 3:
+        return [
+          [1, 1, 1],
+        ];
+      default:
+        return [
+          [1, 1, 1, 1],
+        ];
     }
   };
 
-  const rotateBlock = () => {
-    const shape = currentBlock.shape;
-    const color = currentBlock.color;
-    const x = currentBlock.x;
-    const y = currentBlock.y;
-    if (shape === 'I') {
-      setCurrentBlock({ shape: 'I', color, x, y });
-    } else if (shape === 'J') {
-      setCurrentBlock({ shape: 'L', color, x, y });
-    } else if (shape === 'L') {
-      setCurrentBlock({ shape: 'J', color, x, y });
-    } else if (shape === 'O') {
-      setCurrentBlock({ shape: 'O', color, x, y });
-    } else if (shape === 'S') {
-      setCurrentBlock({ shape: 'Z', color, x, y });
-    } else if (shape === 'T') {
-      setCurrentBlock({ shape: 'T', color, x, y });
-    } else if (shape === 'Z') {
-      setCurrentBlock({ shape: 'S', color, x, y });
+  const getNewShape = (shape, rotation) => {
+    switch (rotation) {
+      case 0:
+        return shape;
+      case 1:
+        return shape.map((row) => row.reverse());
+      case 2:
+        return shape[0].map((_, i) => shape[shape.length - 1 - i]);
+      case 3:
+        return shape.map((row) => row.reverse()).reverse();
+      default:
+        return shape;
     }
   };
 
-  const fitBlock = () => {
-    const boardCopy = [...board];
-    const blockCopy = { ...currentBlock };
-    if (blockCopy.x >= 0 && blockCopy.x <= 9 && blockCopy.y >= 0 && blockCopy.y <= 19) {
-      boardCopy[blockCopy.y][blockCopy.x] = 1;
-      setBoard(boardCopy);
-      createBlock();
-    }
-  };
-
-  const calculateScore = () => {
-    const score = currentBlock.shape === 'I' ? 10 : 5;
-    setScore((prevScore) => prevScore + score);
+  const getRandomColor = () => {
+    const colors = ['red', 'green', 'blue', 'yellow', 'orange', 'purple'];
+    return colors[Math.floor(Math.random() * colors.length)];
   };
 
   return (
-    <div className="flex justify-center items-center h-screen">
-      <div className="w-96 h-96 border-2 border-gray-400">
-        <div className="w-full h-full grid grid-cols-10 grid-rows-20">
-          {board.map((row, rowIndex) => (
-            <div key={rowIndex} className="flex justify-center items-center">
-              {row.map((cell, cellIndex) => (
-                <div
-                  key={cellIndex}
-                  className={`w-4 h-4 ${cell === 1 ? 'bg-gray-400' : 'bg-gray-200'} ${currentBlock.x === cellIndex && currentBlock.y === rowIndex ? 'bg-red-400' : ''}`}
-                />
-              ))}
-            </div>
+    <div className="grid w-96 h-96">
+      {state.grid.map((row, y) => (
+        <div key={y} className="flex">
+          {row.map((block, x) => (
+            <div
+              key={x}
+              className={`block ${block ? 'block-rotate' : ''}`}
+              style={{
+                backgroundColor: block ? state.currentBlock.color : 'transparent',
+                transform: block ? `translate(${x * 50}px, ${y * 50}px)` : 'translate(0, 0)',
+              }}
+            />
           ))}
         </div>
-        <div className="flex justify-center items-center mt-4">
-          <button className="px-4 py-2 bg-blue-400 hover:bg-blue-500 text-white rounded" onClick={createBlock}>
-            <FaArrowLeft />
-          </button>
-          <button className="px-4 py-2 bg-green-400 hover:bg-green-500 text-white rounded" onClick={() => moveBlock('left')}>
-            <FaArrowLeft />
-          </button>
-          <button className="px-4 py-2 bg-green-400 hover:bg-green-500 text-white rounded" onClick={() => moveBlock('right')}>
-            <FaArrowRight />
-          </button>
-          <button className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-white rounded" onClick={rotateBlock}>
-            <FaRotate />
-          </button>
-          <button className="px-4 py-2 bg-red-400 hover:bg-red-500 text-white rounded" onClick={fitBlock}>
-            맞추기
-          </button>
-        </div>
-        <div className="flex justify-center items-center mt-4">
-          <p className="text-lg font-bold">점수: {score}</p>
-        </div>
-      </div>
+      ))}
+      <div className="text-center text-lg">{state.score}</div>
+      {state.gameOver && <div className="text-center text-lg game-over">Game Over!</div>}
     </div>
   );
-};
+}
 
-export default TetrisGame;
+export default App;
