@@ -1,242 +1,237 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, ArrowDown } from 'lucide-react';
-
-const tetrominos = {
-  I: [
-    [1, 1, 1, 1]
-  ],
-  J: [
-    [1, 0, 0],
-    [1, 1, 1]
-  ],
-  L: [
-    [0, 0, 1],
-    [1, 1, 1]
-  ],
-  O: [
-    [1, 1],
-    [1, 1]
-  ],
-  S: [
-    [0, 1, 1],
-    [1, 1, 0]
-  ],
-  T: [
-    [0, 1, 0],
-    [1, 1, 1]
-  ],
-  Z: [
-    [1, 1, 0],
-    [0, 1, 1]
-  ]
-};
+import { ArrowLeft, ArrowRight, ArrowUp } from 'lucide-react';
 
 const App = () => {
-  const [board, setBoard] = useState(Array(20).fill(0).map(() => Array(10).fill(0)));
+  const [grid, setGrid] = useState(Array(20).fill(0).map(() => Array(10).fill(0)));
   const [currentTetromino, setCurrentTetromino] = useState(null);
-  const [currentTetrominoX, setCurrentTetrominoX] = useState(0);
-  const [currentTetrominoY, setCurrentTetrominoY] = useState(0);
   const [score, setScore] = useState(0);
-  const [gameOver, setGameOver] = useState(false);
 
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (!gameOver) {
-        moveTetrominoDown();
-      }
-    }, 1000);
-    return () => clearInterval(intervalId);
-  }, [gameOver]);
-
-  useEffect(() => {
-    if (!currentTetromino) {
-      spawnNewTetromino();
+  const tetrominos = [
+    {
+      shape: [
+        [1, 1, 1, 1]
+      ],
+      color: 'red'
+    },
+    {
+      shape: [
+        [1, 1],
+        [1, 1]
+      ],
+      color: 'blue'
+    },
+    {
+      shape: [
+        [1, 1, 1],
+        [0, 1, 0]
+      ],
+      color: 'green'
+    },
+    {
+      shape: [
+        [1, 1, 1],
+        [1, 0, 0]
+      ],
+      color: 'yellow'
+    },
+    {
+      shape: [
+        [1, 1, 1],
+        [0, 0, 1]
+      ],
+      color: 'purple'
+    },
+    {
+      shape: [
+        [1, 1, 0],
+        [0, 1, 1]
+      ],
+      color: 'orange'
+    },
+    {
+      shape: [
+        [0, 1, 1],
+        [1, 1, 0]
+      ],
+      color: 'pink'
     }
-  }, [currentTetromino]);
-
-  const spawnNewTetromino = () => {
-    const tetrominoType = Object.keys(tetrominos)[Math.floor(Math.random() * Object.keys(tetrominos).length)];
-    const tetromino = tetrominos[tetrominoType];
-    setCurrentTetromino(tetromino);
-    setCurrentTetrominoX(5 - Math.floor(tetromino[0].length / 2));
-    setCurrentTetrominoY(0);
-  };
-
-  const moveTetrominoDown = () => {
-    if (canMoveTetrominoDown()) {
-      setCurrentTetrominoY(currentTetrominoY + 1);
-    } else {
-      placeTetromino();
-      checkForLines();
-      spawnNewTetromino();
-    }
-  };
-
-  const moveTetrominoLeft = () => {
-    if (canMoveTetrominoLeft()) {
-      setCurrentTetrominoX(currentTetrominoX - 1);
-    }
-  };
-
-  const moveTetrominoRight = () => {
-    if (canMoveTetrominoRight()) {
-      setCurrentTetrominoX(currentTetrominoX + 1);
-    }
-  };
-
-  const rotateTetromino = () => {
-    if (canRotateTetromino()) {
-      const rotatedTetromino = rotateMatrix(currentTetromino);
-      setCurrentTetromino(rotatedTetromino);
-    }
-  };
+  ];
 
   const canMoveTetrominoDown = () => {
-    for (let i = 0; i < currentTetromino.length; i++) {
-      for (let j = 0; j < currentTetromino[i].length; j++) {
-        if (currentTetromino[i][j] === 1) {
-          if (currentTetrominoY + i + 1 >= board.length) {
-            return false;
-          }
-          if (board[currentTetrominoY + i + 1][currentTetrominoX + j] === 1) {
-            return false;
-          }
-        }
-      }
-    }
+    if (!currentTetromino) return;
+    const newTetromino = { ...currentTetromino };
+    newTetromino.y += 1;
+    if (isCollision(newTetromino)) return false;
     return true;
   };
 
   const canMoveTetrominoLeft = () => {
-    for (let i = 0; i < currentTetromino.length; i++) {
-      for (let j = 0; j < currentTetromino[i].length; j++) {
-        if (currentTetromino[i][j] === 1) {
-          if (currentTetrominoX + j - 1 < 0) {
-            return false;
-          }
-          if (board[currentTetrominoY + i][currentTetrominoX + j - 1] === 1) {
-            return false;
-          }
-        }
-      }
-    }
+    if (!currentTetromino) return;
+    const newTetromino = { ...currentTetromino };
+    newTetromino.x -= 1;
+    if (isCollision(newTetromino)) return false;
     return true;
   };
 
   const canMoveTetrominoRight = () => {
-    for (let i = 0; i < currentTetromino.length; i++) {
-      for (let j = 0; j < currentTetromino[i].length; j++) {
-        if (currentTetromino[i][j] === 1) {
-          if (currentTetrominoX + j + 1 >= board[0].length) {
-            return false;
-          }
-          if (board[currentTetrominoY + i][currentTetrominoX + j + 1] === 1) {
-            return false;
-          }
-        }
-      }
-    }
+    if (!currentTetromino) return;
+    const newTetromino = { ...currentTetromino };
+    newTetromino.x += 1;
+    if (isCollision(newTetromino)) return false;
+    return true;
+  };
+
+  const canMoveTetrominoUp = () => {
+    if (!currentTetromino) return;
+    const newTetromino = { ...currentTetromino };
+    newTetromino.y -= 1;
+    if (isCollision(newTetromino)) return false;
     return true;
   };
 
   const canRotateTetromino = () => {
-    const rotatedTetromino = rotateMatrix(currentTetromino);
-    for (let i = 0; i < rotatedTetromino.length; i++) {
-      for (let j = 0; j < rotatedTetromino[i].length; j++) {
-        if (rotatedTetromino[i][j] === 1) {
-          if (currentTetrominoX + j < 0 || currentTetrominoX + j >= board[0].length) {
-            return false;
-          }
-          if (currentTetrominoY + i < 0 || currentTetrominoY + i >= board.length) {
-            return false;
-          }
-          if (board[currentTetrominoY + i][currentTetrominoX + j] === 1) {
-            return false;
-          }
+    if (!currentTetromino) return;
+    const newTetromino = { ...currentTetromino };
+    newTetromino.shape = rotateShape(newTetromino.shape);
+    if (isCollision(newTetromino)) return false;
+    return true;
+  };
+
+  const removeFullLines = () => {
+    if (!currentTetromino) return;
+    const newGrid = [...grid];
+    for (let i = 0; i < newGrid.length; i++) {
+      if (isFullLine(newGrid[i])) {
+        newGrid.splice(i, 1);
+        newGrid.unshift(Array(10).fill(0));
+        setScore(score + 1);
+      }
+    }
+    setGrid(newGrid);
+  };
+
+  const updateGrid = () => {
+    if (!currentTetromino) return;
+    const newGrid = [...grid];
+    for (let i = 0; i < currentTetromino.shape.length; i++) {
+      for (let j = 0; j < currentTetromino.shape[i].length; j++) {
+        if (currentTetromino.shape[i][j] === 1) {
+          newGrid[currentTetromino.y + i][currentTetromino.x + j] = 1;
         }
       }
+    }
+    setGrid(newGrid);
+  };
+
+  const drawTetromino = () => {
+    if (!currentTetromino) return;
+    const newGrid = [...grid];
+    for (let i = 0; i < currentTetromino.shape.length; i++) {
+      for (let j = 0; j < currentTetromino.shape[i].length; j++) {
+        if (currentTetromino.shape[i][j] === 1) {
+          newGrid[currentTetromino.y + i][currentTetromino.x + j] = 1;
+        }
+      }
+    }
+    setGrid(newGrid);
+  };
+
+  const gameLoop = () => {
+    if (!currentTetromino) {
+      const newTetromino = {
+        shape: tetrominos[Math.floor(Math.random() * tetrominos.length)].shape,
+        color: tetrominos[Math.floor(Math.random() * tetrominos.length)].color,
+        x: 3,
+        y: 0
+      };
+      setCurrentTetromino(newTetromino);
+    }
+    if (canMoveTetrominoDown()) {
+      const newTetromino = { ...currentTetromino };
+      newTetromino.y += 1;
+      setCurrentTetromino(newTetromino);
+    } else {
+      updateGrid();
+      removeFullLines();
+      const newTetromino = {
+        shape: tetrominos[Math.floor(Math.random() * tetrominos.length)].shape,
+        color: tetrominos[Math.floor(Math.random() * tetrominos.length)].color,
+        x: 3,
+        y: 0
+      };
+      setCurrentTetromino(newTetromino);
+    }
+    setTimeout(gameLoop, 1000);
+  };
+
+  const isCollision = (tetromino) => {
+    for (let i = 0; i < tetromino.shape.length; i++) {
+      for (let j = 0; j < tetromino.shape[i].length; j++) {
+        if (tetromino.shape[i][j] === 1) {
+          if (tetromino.x + j < 0 || tetromino.x + j >= 10) return true;
+          if (tetromino.y + i < 0 || tetromino.y + i >= 20) return true;
+          if (grid[tetromino.y + i][tetromino.x + j] === 1) return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  const isFullLine = (line) => {
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === 0) return false;
     }
     return true;
   };
 
-  const placeTetromino = () => {
-    for (let i = 0; i < currentTetromino.length; i++) {
-      for (let j = 0; j < currentTetromino[i].length; j++) {
-        if (currentTetromino[i][j] === 1) {
-          board[currentTetrominoY + i][currentTetrominoX + j] = 1;
-        }
+  const rotateShape = (shape) => {
+    const newShape = [];
+    for (let i = 0; i < shape[0].length; i++) {
+      newShape.push([]);
+      for (let j = shape.length - 1; j >= 0; j--) {
+        newShape[i].push(shape[j][i]);
       }
     }
-  };
-
-  const checkForLines = () => {
-    let linesCleared = 0;
-    for (let i = 0; i < board.length; i++) {
-      let isFullLine = true;
-      for (let j = 0; j < board[i].length; j++) {
-        if (board[i][j] === 0) {
-          isFullLine = false;
-          break;
-        }
-      }
-      if (isFullLine) {
-        linesCleared++;
-        board.splice(i, 1);
-        board.unshift(Array(10).fill(0));
-      }
-    }
-    setScore(score + linesCleared * linesCleared);
-  };
-
-  const rotateMatrix = (matrix) => {
-    return matrix[0].map((_, colIndex) => matrix.map(row => row[colIndex]).reverse());
-  };
-
-  const handleKeyPress = (event) => {
-    if (event.key === 'ArrowLeft') {
-      moveTetrominoLeft();
-    } else if (event.key === 'ArrowRight') {
-      moveTetrominoRight();
-    } else if (event.key === 'ArrowDown') {
-      moveTetrominoDown();
-    } else if (event.key === ' ') {
-      rotateTetromino();
-    }
+    return newShape;
   };
 
   useEffect(() => {
-    document.addEventListener('keydown', handleKeyPress);
-    return () => document.removeEventListener('keydown', handleKeyPress);
+    gameLoop();
   }, []);
 
-  if (gameOver) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="text-3xl font-bold">Game Over!</div>
-        <div className="text-2xl font-bold">Score: {score}</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex justify-center items-center h-screen">
-      <div className="grid grid-cols-10 grid-rows-20 gap-1 w-64 h-64 border-2 border-gray-500">
-        {board.map((row, rowIndex) => row.map((cell, columnIndex) => (
-          <div key={`${rowIndex}-${columnIndex}`} className={`w-6 h-6 ${cell === 1 ? 'bg-blue-500' : 'bg-gray-200'}`}></div>
-        )))}
+    <div className="w-full h-screen flex justify-center items-center">
+      <div className="w-200 h-400 border-2 border-gray-500">
+        {grid.map((line, i) => (
+          <div key={i} className="flex">
+            {line.map((cell, j) => (
+              <div key={j} className={`w-20 h-20 ${cell === 1 ? 'bg-blue-500' : 'bg-gray-200'}`}></div>
+            ))}
+          </div>
+        ))}
       </div>
-      {currentTetromino && (
-        <div className="absolute">
-          {currentTetromino.map((row, rowIndex) => row.map((cell, columnIndex) => (
-            <div key={`${rowIndex}-${columnIndex}`} className={`w-6 h-6 ${cell === 1 ? 'bg-red-500' : 'bg-gray-200'} absolute top-${currentTetrominoY * 6 + rowIndex * 6} left-${currentTetrominoX * 6 + columnIndex * 6}`}></div>
-          )))}
-        </div>
-      )}
-      <div className="text-2xl font-bold">Score: {score}</div>
-      <div className="flex justify-center items-center">
-        <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={moveTetrominoLeft} />
-        <ArrowRight className="w-6 h-6 cursor-pointer" onClick={moveTetrominoRight} />
-        <ArrowDown className="w-6 h-6 cursor-pointer" onClick={moveTetrominoDown} />
+      <div className="ml-10">
+        <ArrowLeft size={24} className="cursor-pointer" onClick={() => {
+          if (canMoveTetrominoLeft()) {
+            const newTetromino = { ...currentTetromino };
+            newTetromino.x -= 1;
+            setCurrentTetromino(newTetromino);
+          }
+        }} />
+        <ArrowRight size={24} className="cursor-pointer" onClick={() => {
+          if (canMoveTetrominoRight()) {
+            const newTetromino = { ...currentTetromino };
+            newTetromino.x += 1;
+            setCurrentTetromino(newTetromino);
+          }
+        }} />
+        <ArrowUp size={24} className="cursor-pointer" onClick={() => {
+          if (canRotateTetromino()) {
+            const newTetromino = { ...currentTetromino };
+            newTetromino.shape = rotateShape(newTetromino.shape);
+            setCurrentTetromino(newTetromino);
+          }
+        }} />
       </div>
     </div>
   );
