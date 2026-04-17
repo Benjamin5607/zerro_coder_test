@@ -1,165 +1,179 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
-const App: React.FC = () => {
-  const [board, setBoard] = useState<(string | null)[][]>(Array(20).fill(null).map(() => Array(10).fill(null)));
-  const [currentPiece, setCurrentPiece] = useState<{
-    shape: number[][];
-    color: string;
-    row: number;
-    col: number;
-  }>({
-    shape: [[1,1],[1,1]],
-    color: '#00f',
-    row: 0,
-    col: 3
+const App = () => {
+  const [grid, setGrid] = useState<Array<Array<string | null>>>(Array(20).fill(null).map(() => Array(10).fill(null)));
+  const [current, setCurrent] = useState<{ shape: number[][], color: string, x: number, y: number }>({
+    shape: [[1, 1, 1, 1]], 
+    color: '#FFD700', 
+    x: 3, 
+    y: 0
   });
-  const [nextPiece, setNextPiece] = useState<{
-    shape: number[][];
-    color: string;
-  }>({
-    shape: [[1,1],[1,1]],
-    color: '#0f0'
+  const [nextPiece, setNextPiece] = useState<{ shape: number[][], color: string }>({
+    shape: [[1, 1], [1, 1]], 
+    color: '#00FF00'
   });
   const [score, setScore] = useState(0);
+  const [level, setLevel] = useState(1);
+  const [lines, setLines] = useState(0);
   const [gameOver, setGameOver] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [gameSpeed, setGameSpeed] = useState(500);
-  const gameLoopRef = useRef<number | null>(null);
+  const [paused, setPaused] = useState(false);
 
-  const generatePiece = useCallback((): { shape: number[][], color: string } => {
-    const shapes = [
-      [[1,1,1,1]], // I
-      [[1,1],[1,1]], // O
-      [[0,1,0],[1,1,1]], // T
-      [[1,0,0],[1,1,1]], // L
-      [[0,0,1],[1,1,1]]  // J
-    ];
-    const colors = ['#00f', '#0f0', '#f00', '#0ff', '#f80'];
+  const shapes = [
+    { shape: [[1, 1, 1, 1]], color: '#FFD700' },
+    { shape: [[1, 1], [1, 1]], color: '#00FF00' },
+    { shape: [[1, 1, 0], [0, 1, 1]], color: '#FF00FF' },
+    { shape: [[0, 1, 1], [1, 1, 0]], color: '#00FFFF' },
+    { shape: [[1, 1, 1], [0, 1, 0]], color: '#FF0000' },
+    { shape: [[1, 1, 1], [1, 0, 0]], color: '#0000FF' },
+    { shape: [[1, 1, 1], [0, 0, 1]], color: '#FFFF00' }
+  ];
+
+  const createNewPiece = () => {
+    const randomShape = shapes[Math.floor(Math.random() * shapes.length)];
+    setNextPiece(randomShape);
     return {
-      shape: shapes[Math.floor(Math.random() * shapes.length)],
-      color: colors[Math.floor(Math.random() * colors.length)]
+      shape: randomShape.shape,
+      color: randomShape.color,
+      x: 3,
+      y: 0
     };
-  }, []);
+  };
 
-  const rotatePiece = useCallback((shape: number[][]): number[][] => {
-    return shape[0].map((_, i) => 
-      shape.map(row => row[i]).reverse()
-    );
-  }, []);
+  const rotate = (matrix: number[][]) => {
+    return matrix[0].map((_, i) => matrix.map(row => row[i]).reverse());
+  };
 
-  const checkCollision = useCallback((piece: { shape: number[][], row: number, col: number }, board: (string | null)[][]) => {
-    for (let r = 0; r < piece.shape.length; r++) {
-      for (let c = 0; c < piece.shape[r].length; c++) {
-        if (piece.shape[r][c]) {
-          const boardRow = piece.row + r;
-          const boardCol = piece.col + c;
-          
-          if (boardRow >= 20 || boardCol < 0 || boardCol >= 10 || 
-              (boardRow >= 0 && board[boardRow][boardCol])) {
-            return true;
-          }
+  const isValidMove = (piece: { shape: number[][], x: number, y: number }) => {
+    for (let y = 0; y < piece.shape.length; y++) {
+      for (let x = 0; x < piece.shape[y].length; x++) {
+        if (piece.shape[y][x] && 
+            (piece.x + x < 0 || 
+             piece.x + x >= 10 || 
+             piece.y + y >= 20 || 
+             grid[piece.y + y]?.[piece.x + x])) {
+          return false;
         }
       }
     }
-    return false;
-  }, []);
+    return true;
+  };
 
-  const mergePiece = useCallback((piece: { shape: number[][], row: number, col: number, color: string }, board: (string | null)[][]) => {
-    const newBoard = board.map(row => [...row]);
-    for (let r = 0; r < piece.shape.length; r++) {
-      for (let c = 0; c < piece.shape[r].length; c++) {
-        if (piece.shape[r][c]) {
-          const boardRow = piece.row + r;
-          const boardCol = piece.col + c;
-          if (boardRow >= 0) newBoard[boardRow][boardCol] = piece.color;
+  const mergeGrid = (piece: { shape: number[][], color: string, x: number, y: number }) => {
+    const newGrid = grid.map(row => [...row]);
+    for (let y = 0; y < piece.shape.length; y++) {
+      for (let x = 0; x < piece.shape[y].length; x++) {
+        if (piece.shape[y][x]) {
+          newGrid[piece.y + y][piece.x + x] = piece.color;
         }
       }
     }
-    return newBoard;
-  }, []);
+    setGrid(newGrid);
+  };
 
-  const clearLines = useCallback((board: (string | null)[][]) => {
-    const newBoard = [...board];
+  const clearLines = () => {
+    let newGrid = [...grid];
     let linesCleared = 0;
     
-    for (let r = newBoard.length - 1; r >= 0; r--) {
-      if (newBoard[r].every(cell => cell !== null)) {
-        newBoard.splice(r, 1);
-        newBoard.unshift(Array(10).fill(null));
+    for (let y = newGrid.length - 1; y >= 0; y--) {
+      if (newGrid[y].every(cell => cell !== null)) {
+        newGrid.splice(y, 1);
+        newGrid.unshift(Array(10).fill(null));
         linesCleared++;
-        r++;
+        y++;
       }
     }
     
-    return { board: newBoard, linesCleared };
-  }, []);
+    setGrid(newGrid);
+    setLines(prev => prev + linesCleared);
+    setScore(prev => prev + linesCleared * 100 * level);
+    setLevel(Math.floor((lines + linesCleared) / 10) + 1);
+  };
 
-  const movePiece = useCallback((direction: 'left' | 'right' | 'down' | 'rotate') => {
-    if (gameOver || isPaused) return;
+  const moveDown = () => {
+    const newCurrent = { ...current };
+    newCurrent.y += 1;
     
-    const newPiece = { ...currentPiece };
-    let moved = false;
-    
-    switch(direction) {
-      case 'left':
-        newPiece.col -= 1;
-        break;
-      case 'right':
-        newPiece.col += 1;
-        break;
-      case 'down':
-        newPiece.row += 1;
-        break;
-      case 'rotate':
-        newPiece.shape = rotatePiece(newPiece.shape);
-        break;
-    }
-    
-    if (!checkCollision(newPiece, board)) {
-      setCurrentPiece(newPiece);
-      moved = true;
-    } else if (direction === 'down' && !moved) {
-      // Lock piece in place
-      const newBoard = mergePiece(currentPiece, board);
-      const { board: clearedBoard, linesCleared } = clearLines(newBoard);
-      setBoard(clearedBoard);
-      setScore(prev => prev + linesCleared * 100);
-      
-      const newNextPiece = generatePiece();
-      setCurrentPiece({ 
-        shape: newNextPiece.shape, 
-        color: newNextPiece.color, 
-        row: 0, 
-        col: 3 
-      });
-      setNextPiece(generatePiece());
-      
-      if (checkCollision(currentPiece, clearedBoard)) {
+    if (!isValidMove(newCurrent)) {
+      newCurrent.y -= 1;
+      mergeGrid(newCurrent);
+      clearLines();
+      if (current.y === 0) {
         setGameOver(true);
+        return;
       }
+      setCurrent(createNewPiece());
+    } else {
+      setCurrent(newCurrent);
     }
-  }, [board, currentPiece, gameOver, isPaused, checkCollision, mergePiece, clearLines, generatePiece, rotatePiece]);
+  };
+
+  const move = (dx: number) => {
+    const newCurrent = { ...current };
+    newCurrent.x += dx;
+    
+    if (isValidMove(newCurrent)) {
+      setCurrent(newCurrent);
+    }
+  };
+
+  const rotatePiece = () => {
+    const newCurrent = { ...current };
+    newCurrent.shape = rotate(current.shape);
+    
+    if (isValidMove(newCurrent)) {
+      setCurrent(newCurrent);
+    }
+  };
+
+  const startGame = () => {
+    setGrid(Array(20).fill(null).map(() => Array(10).fill(null)));
+    setCurrent(createNewPiece());
+    setNextPiece(shapes[Math.floor(Math.random() * shapes.length)]);
+  };
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      switch(e.key) {
-        case 'ArrowLeft': movePiece('left'); break;
-        case 'ArrowRight': movePiece('right'); break;
-        case 'ArrowDown': movePiece('down'); break;
-        case 'ArrowUp': movePiece('rotate'); break;
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [movePiece]);
+    const interval = setInterval(() => {
+      moveDown();
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [current]);
 
-  useEffect(() => {
-    if (gameOver || isPaused) return;
-    
-    gameLoopRef.current = window.setInterval(() => {
-      movePiece('down');
-    }, gameSpeed);
-    
-    return () => {
-      if (gameLoopRef.current)
+  return (
+    <div className="flex flex-col items-center justify-center h-screen">
+      <div className="grid grid-cols-10 gap-1 w-40 h-40">
+        {grid.map((row, y) => (
+          <div key={y} className="flex flex-row gap-1">
+            {row.map((cell, x) => (
+              <div key={x} className={`w-6 h-6 ${cell ? 'bg-blue-500' : 'bg-gray-500'}`}></div>
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-row gap-2 mt-4">
+        <div className="bg-red-500 w-6 h-6"></div>
+        <div className="bg-green-500 w-6 h-6"></div>
+        <div className="bg-blue-500 w-6 h-6"></div>
+        <div className="bg-yellow-500 w-6 h-6"></div>
+      </div>
+      <div className="flex flex-row gap-2 mt-4">
+        <button className="bg-gray-500 p-2 rounded" onClick={startGame}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+        <button className="bg-gray-500 p-2 rounded" onClick={moveDown}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </button>
+      </div>
+      <div className="mt-4">
+        <p className="text-lg font-bold">Score: {score}</p>
+        <p className="text-lg font-bold">Level: {level}</p>
+        <p className="text-lg font-bold">Lines: {lines}</p>
+      </div>
+    </div>
+  );
+};
+
+export default App;
