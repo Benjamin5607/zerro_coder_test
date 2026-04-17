@@ -1,190 +1,165 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
-const App = () => {
-  const [gameOver, setGameOver] = useState(false);
-  const [score, setScore] = useState(0);
-  const [currentBlock, setCurrentBlock] = useState({
-    shape: 'I',
-    color: 'blue',
-    x: 5,
-    y: 0,
+const App: React.FC = () => {
+  const [board, setBoard] = useState<(string | null)[][]>(Array(20).fill(null).map(() => Array(10).fill(null)));
+  const [currentPiece, setCurrentPiece] = useState<{
+    shape: number[][];
+    color: string;
+    row: number;
+    col: number;
+  }>({
+    shape: [[1,1],[1,1]],
+    color: '#00f',
+    row: 0,
+    col: 3
   });
-  const [blocks, setBlocks] = useState([]);
-  const [moveDirection, setMoveDirection] = useState('right');
+  const [nextPiece, setNextPiece] = useState<{
+    shape: number[][];
+    color: string;
+  }>({
+    shape: [[1,1],[1,1]],
+    color: '#0f0'
+  });
+  const [score, setScore] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [gameSpeed, setGameSpeed] = useState(500);
+  const gameLoopRef = useRef<number | null>(null);
 
-  const blockShapes = {
-    I: [
-      [1, 1, 1, 1],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-    ],
-    J: [
-      [1, 0, 0],
-      [1, 1, 1],
-      [0, 0, 0],
-      [0, 0, 0],
-    ],
-    L: [
-      [0, 0, 0],
-      [1, 1, 1],
-      [0, 0, 0],
-      [0, 0, 0],
-    ],
-    O: [
-      [1, 1],
-      [1, 1],
-      [0, 0],
-      [0, 0],
-    ],
-    S: [
-      [0, 1, 1],
-      [1, 1, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-    ],
-    T: [
-      [0, 1, 0],
-      [1, 1, 1],
-      [0, 0, 0],
-      [0, 0, 0],
-    ],
-    Z: [
-      [1, 1, 0],
-      [0, 1, 1],
-      [0, 0, 0],
-      [0, 0, 0],
-    ],
-  };
+  const generatePiece = useCallback((): { shape: number[][], color: string } => {
+    const shapes = [
+      [[1,1,1,1]], // I
+      [[1,1],[1,1]], // O
+      [[0,1,0],[1,1,1]], // T
+      [[1,0,0],[1,1,1]], // L
+      [[0,0,1],[1,1,1]]  // J
+    ];
+    const colors = ['#00f', '#0f0', '#f00', '#0ff', '#f80'];
+    return {
+      shape: shapes[Math.floor(Math.random() * shapes.length)],
+      color: colors[Math.floor(Math.random() * colors.length)]
+    };
+  }, []);
 
-  const scoreMap = {
-    I: 1,
-    J: 1,
-    L: 1,
-    O: 2,
-    S: 2,
-    T: 1,
-    Z: 2,
-  };
+  const rotatePiece = useCallback((shape: number[][]): number[][] => {
+    return shape[0].map((_, i) => 
+      shape.map(row => row[i]).reverse()
+    );
+  }, []);
 
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (!gameOver) {
-        moveBlock();
+  const checkCollision = useCallback((piece: { shape: number[][], row: number, col: number }, board: (string | null)[][]) => {
+    for (let r = 0; r < piece.shape.length; r++) {
+      for (let c = 0; c < piece.shape[r].length; c++) {
+        if (piece.shape[r][c]) {
+          const boardRow = piece.row + r;
+          const boardCol = piece.col + c;
+          
+          if (boardRow >= 20 || boardCol < 0 || boardCol >= 10 || 
+              (boardRow >= 0 && board[boardRow][boardCol])) {
+            return true;
+          }
+        }
       }
-    }, 1000);
-    return () => clearInterval(intervalId);
-  }, [gameOver]);
+    }
+    return false;
+  }, []);
 
-  const moveBlock = () => {
-    const newX = currentBlock.x + (moveDirection === 'right' ? 1 : -1);
-    const newBlocks = [...blocks];
-    newBlocks.forEach((block, index) => {
-      if (newBlocks[index].x === newX && newBlocks[index].y === currentBlock.y) {
+  const mergePiece = useCallback((piece: { shape: number[][], row: number, col: number, color: string }, board: (string | null)[][]) => {
+    const newBoard = board.map(row => [...row]);
+    for (let r = 0; r < piece.shape.length; r++) {
+      for (let c = 0; c < piece.shape[r].length; c++) {
+        if (piece.shape[r][c]) {
+          const boardRow = piece.row + r;
+          const boardCol = piece.col + c;
+          if (boardRow >= 0) newBoard[boardRow][boardCol] = piece.color;
+        }
+      }
+    }
+    return newBoard;
+  }, []);
+
+  const clearLines = useCallback((board: (string | null)[][]) => {
+    const newBoard = [...board];
+    let linesCleared = 0;
+    
+    for (let r = newBoard.length - 1; r >= 0; r--) {
+      if (newBoard[r].every(cell => cell !== null)) {
+        newBoard.splice(r, 1);
+        newBoard.unshift(Array(10).fill(null));
+        linesCleared++;
+        r++;
+      }
+    }
+    
+    return { board: newBoard, linesCleared };
+  }, []);
+
+  const movePiece = useCallback((direction: 'left' | 'right' | 'down' | 'rotate') => {
+    if (gameOver || isPaused) return;
+    
+    const newPiece = { ...currentPiece };
+    let moved = false;
+    
+    switch(direction) {
+      case 'left':
+        newPiece.col -= 1;
+        break;
+      case 'right':
+        newPiece.col += 1;
+        break;
+      case 'down':
+        newPiece.row += 1;
+        break;
+      case 'rotate':
+        newPiece.shape = rotatePiece(newPiece.shape);
+        break;
+    }
+    
+    if (!checkCollision(newPiece, board)) {
+      setCurrentPiece(newPiece);
+      moved = true;
+    } else if (direction === 'down' && !moved) {
+      // Lock piece in place
+      const newBoard = mergePiece(currentPiece, board);
+      const { board: clearedBoard, linesCleared } = clearLines(newBoard);
+      setBoard(clearedBoard);
+      setScore(prev => prev + linesCleared * 100);
+      
+      const newNextPiece = generatePiece();
+      setCurrentPiece({ 
+        shape: newNextPiece.shape, 
+        color: newNextPiece.color, 
+        row: 0, 
+        col: 3 
+      });
+      setNextPiece(generatePiece());
+      
+      if (checkCollision(currentPiece, clearedBoard)) {
         setGameOver(true);
       }
-    });
-    if (!newBlocks.some((block) => block.x === newX && block.y === currentBlock.y)) {
-      setCurrentBlock({ ...currentBlock, x: newX });
     }
-  };
+  }, [board, currentPiece, gameOver, isPaused, checkCollision, mergePiece, clearLines, generatePiece, rotatePiece]);
 
-  const handleKeyDown = (event) => {
-    if (event.key === 'ArrowLeft') {
-      setMoveDirection('left');
-    } else if (event.key === 'ArrowRight') {
-      setMoveDirection('right');
-    }
-  };
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch(e.key) {
+        case 'ArrowLeft': movePiece('left'); break;
+        case 'ArrowRight': movePiece('right'); break;
+        case 'ArrowDown': movePiece('down'); break;
+        case 'ArrowUp': movePiece('rotate'); break;
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [movePiece]);
 
-  const handleKeyUp = () => {
-    setMoveDirection('right');
-  };
-
-  const handleClear = () => {
-    setScore(score + scoreMap[currentBlock.shape]);
-    setCurrentBlock({
-      shape: getRandomBlockShape(),
-      color: getRandomColor(),
-      x: 5,
-      y: 0,
-    });
-    setBlocks([]);
-  };
-
-  const getRandomBlockShape = () => {
-    const shapes = Object.keys(blockShapes);
-    return shapes[Math.floor(Math.random() * shapes.length)];
-  };
-
-  const getRandomColor = () => {
-    const colors = ['blue', 'red', 'green', 'yellow', 'purple'];
-    return colors[Math.floor(Math.random() * colors.length)];
-  };
-
-  const handleRestart = () => {
-    setGameOver(false);
-    setScore(0);
-    setCurrentBlock({
-      shape: getRandomBlockShape(),
-      color: getRandomColor(),
-      x: 5,
-      y: 0,
-    });
-    setBlocks([]);
-  };
-
-  return (
-    <div
-      className="w-full h-screen flex justify-center items-center"
-      onKeyDown={handleKeyDown}
-      onKeyUp={handleKeyUp}
-    >
-      <div
-        className="w-1/2 h-1/2 flex justify-center items-center"
-        style={{
-          border: '1px solid black',
-        }}
-      >
-        {blocks.map((block, index) => (
-          <div
-            key={index}
-            className={`w-4 h-4 ${block.color} ml-${block.x} mt-${block.y}`}
-            style={{
-              position: 'absolute',
-            }}
-          />
-        ))}
-        <div
-          className={`w-4 h-4 ${currentBlock.color} ml-${currentBlock.x} mt-${currentBlock.y}`}
-          style={{
-            position: 'absolute',
-          }}
-        />
-      </div>
-      <div
-        className="w-1/2 h-1/2 flex justify-center items-center"
-        style={{
-          border: '1px solid black',
-        }}
-      >
-        <p className="text-2xl font-bold">Score: {score}</p>
-        <button
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          onClick={handleClear}
-        >
-          Clear
-        </button>
-        <button
-          className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-          onClick={handleRestart}
-        >
-          Restart
-        </button>
-      </div>
-    </div>
-  );
-};
-
-export default App;
+  useEffect(() => {
+    if (gameOver || isPaused) return;
+    
+    gameLoopRef.current = window.setInterval(() => {
+      movePiece('down');
+    }, gameSpeed);
+    
+    return () => {
+      if (gameLoopRef.current)
