@@ -1,91 +1,170 @@
 import React, { useState, useEffect } from 'react';
-import './App.css';
+import { FaArrowLeft, FaArrowRight, FaRotate } from 'lucide-react';
 
-interface Block {
-  x: number;
-  y: number;
-  color: string;
-}
-
-interface TetrisGame {
-  grid: Block[][];
-  score: number;
-  level: number;
-  nextBlock: Block;
-}
-
-const App = () => {
-  const [gameState, setGameState] = useState<TetrisGame>({
-    grid: Array(20).fill(null).map(() => Array(10).fill(null)),
-    score: 0,
-    level: 1,
-    nextBlock: {
-      x: 5,
-      y: 0,
-      color: 'red',
-    },
-  });
+const TetrisGame = () => {
+  const [gameStarted, setGameStarted] = useState(false);
+  const [currentBlock, setCurrentBlock] = useState(null);
+  const [nextBlock, setNextBlock] = useState(null);
+  const [score, setScore] = useState(0);
+  const [records, setRecords] = useState([]);
+  const [gameOver, setGameOver] = useState(false);
+  const [grid, setGrid] = useState([]);
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      const newGameState = { ...gameState };
-      newGameState.grid = moveBlock(newGameState.grid, newGameState.nextBlock);
-      newGameState.score = calculateScore(newGameState.grid);
-      newGameState.level = calculateLevel(newGameState.score);
-      newGameState.nextBlock = generateNextBlock();
-      setGameState(newGameState);
-    }, 1000);
-    return () => clearInterval(intervalId);
-  }, [gameState]);
+    if (!gameStarted) {
+      setGrid([]);
+      setScore(0);
+      setRecords([]);
+      setGameOver(false);
+      setGameStarted(true);
+    }
 
-  const moveBlock = (grid: Block[][], block: Block): Block[][] => {
-    const newGrid = grid.map((row) => [...row]);
-    newGrid[block.y][block.x] = block;
-    return newGrid;
+    if (!currentBlock) {
+      const newBlock = generateNewBlock();
+      setCurrentBlock(newBlock);
+      setNextBlock(generateNewBlock());
+    }
+
+    if (currentBlock) {
+      const newGrid = moveBlock(currentBlock, grid);
+      setGrid(newGrid);
+    }
+
+    if (gameOver) {
+      setGameOver(false);
+      setScore(0);
+      setGrid([]);
+    }
+  }, [currentBlock, grid, gameOver]);
+
+  const generateNewBlock = () => {
+    const blockType = Math.floor(Math.random() * 7);
+    const block = {
+      type: blockType,
+      x: 5,
+      y: 0,
+      rotation: 0,
+    };
+    return block;
   };
 
-  const calculateScore = (grid: Block[][]): number => {
-    let score = 0;
-    for (let y = 0; y < grid.length; y++) {
-      for (let x = 0; x < grid[y].length; x++) {
-        if (grid[y][x] && grid[y][x].color === 'red') {
-          score++;
+  const moveBlock = (block, grid) => {
+    const newGrid = [...grid];
+    for (let i = 0; i < block.y + 1; i++) {
+      for (let j = 0; j < 10; j++) {
+        if (newGrid[i][j] === 1 && (j === block.x || j === block.x + 1 || j === block.x - 1)) {
+          return grid;
         }
       }
     }
-    return score;
+    for (let i = 0; i < block.y + 1; i++) {
+      for (let j = 0; j < 10; j++) {
+        if (newGrid[i][j] === 1 && (j === block.x + 2 || j === block.x - 2)) {
+          return grid;
+        }
+      }
+    }
+    newGrid[block.y][block.x] = 1;
+    newGrid[block.y + 1][block.x] = 1;
+    newGrid[block.y + 1][block.x + 1] = 1;
+    newGrid[block.y + 1][block.x - 1] = 1;
+    return newGrid;
   };
 
-  const calculateLevel = (score: number): number => {
-    return Math.floor(score / 10);
+  const handleMoveLeft = () => {
+    const newBlock = { ...currentBlock };
+    newBlock.x -= 1;
+    const newGrid = moveBlock(newBlock, grid);
+    setCurrentBlock(newBlock);
+    setGrid(newGrid);
   };
 
-  const generateNextBlock = (): Block => {
-    return {
-      x: Math.floor(Math.random() * 10),
-      y: 0,
-      color: 'red',
-    };
+  const handleMoveRight = () => {
+    const newBlock = { ...currentBlock };
+    newBlock.x += 1;
+    const newGrid = moveBlock(newBlock, grid);
+    setCurrentBlock(newBlock);
+    setGrid(newGrid);
+  };
+
+  const handleRotate = () => {
+    const newBlock = { ...currentBlock };
+    newBlock.rotation += 1;
+    const newGrid = moveBlock(newBlock, grid);
+    setCurrentBlock(newBlock);
+    setGrid(newGrid);
+  };
+
+  const handleReset = () => {
+    setGrid([]);
+    setScore(0);
+    setRecords([]);
+    setGameOver(false);
+    setGameStarted(true);
+  };
+
+  const handleScoreUpdate = () => {
+    setScore(score + 1);
+  };
+
+  const handleRecordUpdate = () => {
+    const newRecords = [...records];
+    newRecords.push(score);
+    newRecords.sort((a, b) => b - a);
+    newRecords.splice(10);
+    setRecords(newRecords);
   };
 
   return (
-    <div className="App">
-      <div className="grid">
-        {gameState.grid.map((row, y) => (
-          <div key={y} className="row">
-            {row.map((block, x) => (
-              <div
-                key={x}
-                className={`block ${block ? 'filled' : ''} ${block?.color}`}
-              />
-            ))}
-          </div>
-        ))}
+    <div className="flex flex-col items-center justify-center h-screen">
+      <div className="w-full max-w-md">
+        <div className="grid grid-cols-10 gap-2 h-40">
+          {grid.map((row, rowIndex) => (
+            <div key={rowIndex} className="flex flex-row">
+              {row.map((cell, cellIndex) => (
+                <div
+                  key={cellIndex}
+                  className={`w-4 h-4 bg-gray-200 rounded-lg ${
+                    cell === 1 ? 'bg-red-500' : ''
+                  }`}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-row justify-between mt-4">
+          <div className="text-lg font-bold">Score: {score}</div>
+          <div className="text-lg font-bold">Records: {records.length}</div>
+        </div>
+        <div className="flex flex-row justify-between mt-4">
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            onClick={handleMoveLeft}
+          >
+            <FaArrowLeft />
+          </button>
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            onClick={handleMoveRight}
+          >
+            <FaArrowRight />
+          </button>
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            onClick={handleRotate}
+          >
+            <FaRotate />
+          </button>
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            onClick={handleReset}
+          >
+            Reset
+          </button>
+        </div>
       </div>
-      <div className="score">Score: {gameState.score}</div>
-      <div className="level">Level: {gameState.level}</div>
     </div>
   );
 };
 
-export default App;
+export default TetrisGame;
