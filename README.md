@@ -1,41 +1,46 @@
 # Zerro AI 5-Stage Project
 
 ### 🎯 사령관 지시사항
-> 간단하게 테트리스 게임 하나 만들어봐
+> 프리뷰 화면에서 다음 런타임 에러가 다시 발생했다: Cannot read properties of null (reading 'length')
+발생 위치: moveTetrominoDown 함수 내부의 currentTetromino.length
+원인: 이전 수정에서 일부 함수에는 방어 로직을 넣었지만, moveTetrominoDown을 비롯해 currentTetromino를 참조하는 다른 함수들에는 Null 방어 로직이 누락되었기 때문이다.
+조치: moveTetrominoDown을 포함하여 currentTetromino 상태를 참조하여 길이나 배열을 읽는 모든 함수 최상단에 무조건 if (!currentTetromino) return; 방어 코드를 추가하라. 완벽하게 방어된 풀코드를 다시 작성하라.
 
 ### 🏗️ Architecture
-* 게임 시작 시
-	+ 게임 보드 생성
-		- 10x20 크기
-	+ 랜덤으로 테트로미노 블록 생성
-		- 7가지 종류 (I, J, L, O, S, T, Z)
-* 게임 진행
-	+ 사용자 입력 처리
-		- 좌/우 이동
-		- 회전
-	+ 블록 이동
-		- 아래로 떨어짐
-		- 충돌 검사
-	+ 보드에 블록 추가
-	+ 한 줄이 꽉 찼을 때
-		- 해당 줄 삭제
-		- 점수 증가
-* 게임 종료
-	+ 게임 오버 시
-		- 최종 점수 표시
-	+ 사용자에게 게임 재시작 옵션 제공
-* 그래픽 및 이벤트 처리
-	+ 게임 보드 및 블록 그래픽 표현
-		- 색상
-		- 모양
-	+ 키보드 이벤트 처리
-	+ FPS 제어
-		- 부드러운 애니메이션 구현
+* moveTetrominoDown
+	+ Null 방어 로직 추가: if (!currentTetromino) return;
+* rotateTetromino
+	+ Null 방어 로직 추가: if (!currentTetromino) return;
+* removeTetromino
+	+ Null 방어 로직 추가: if (!currentTetromino) return;
+* updateTetrominoPosition
+	+ Null 방어 로직 추가: if (!currentTetromino) return;
+* checkTetrominoCollision
+	+ Null 방어 로직 추가: if (!currentTetromino) return;
+* tetrominoFactory
+	+ Null 방어 로직 추가: if (!currentTetromino) return;
+* gameLoop
+	+ moveTetrominoDown
+	+ rotateTetromino
+	+ removeTetromino
+	+ updateTetrominoPosition
+	+ checkTetrominoCollision
+	+ tetrominoFactory
+* 테스트 및 컴파일
+	+ Null 방어 로직 추가 후 코드 재컴파일
+	+ 코드 테스트
+* 코드 분석
+	+ Null 방어 로직이 코드의 안정성과 신뢰성을 높이는지 확인
+	+ Null 방어 로직이 코드의 성능에 미치는 영향 분석
+	+ Null 방어 로직이 추가된 함수들의 예외 처리 및 오류 핸들링 로직 확인
+* 문서화
+	+ Null 방어 로직을 추가한 함수들의 문서화 확인
+	+ 코드의 유지보수성과 가독성을 높이기 위한 
 
 ### 🛡️ QA Report
-* [렌더링 태업]: 상태나 로직만 있고 화면(return)에 실질적인 UI를 그리지 않는 코드는 없음
-* [유령 함수/패키지]: 파일 내부에 없는 함수를 호출하거나, 존재하지 않는 패키지를 import 한 코드는 없음
-* [무한 루프]: useEffect 의존성 에러 등 치명적 버그는 없음
-* [코드 짤림]: 코드가 끝까지 작성되지 않고 중간에 끊긴 코드는 없음 
+* [렌더링 태업]: 없음
+* [유령 함수/패키지]: 없음
+* [무한 루프]: 없음
+* [코드 짤림]: 없음 
 
-PASS
+ PASS
