@@ -4,11 +4,32 @@
 > 테트리스 게임 만들어줘
 
 ### 🏗️ Architecture
-<think>
-Okay, the user wants a Tetris game. Let me start by outlining the main components. First, the game area grid where the tetrominoes fall. Then, the tetromino shapes themselves, each with different colors and rotation states. Movement and rotation controls using keyboard inputs. Scoring system for cleared lines and increasing levels. A next piece preview to show the upcoming tetromino. Game over detection when the stack reaches the top. Maybe a pause/resume feature. Also, a high score tracker. Let me structure these into a component tree.
-
-Wait, the user mentioned to avoid any introduction and just provide the component tree in text. So I need to list each component with their subcomponents. Let me make sure each part is covered. The game area grid, tetrominoes with their properties,
+- 게임 시작
+  - 게임 보드 생성
+    - 10x20 격자 생성
+  - 테트로미노 생성
+    - 7가지 종류(I, J, L, O, S, T, Z)
+    - 각 테트로미노 4개의 정사각형 블록으로 구성
+- 플레이어 조작
+  - 테트로미노 이동
+    - 왼쪽, 오른쪽, 아래쪽 이동
+  - 테트로미노 회전
+- 테트로미노 놓기
+  - 이미 놓여진 블록과 겹치지 않도록
+  - 게임 보드의 경계를 넘어가지 않도록
+- 줄 삭제
+  - 한 줄 완전히 채워질 때마다
+  - 해당 줄 삭제
+  - 플레이어 점수 획득
+- 게임 종료
+  - 게임 보드의 위쪽에 블록 쌓여서 새로운 테트로미노 놓을 수 없을 때
+  - 플레이어 점수 표시
 
 ### 🛡️ QA Report
-<think>
-Okay, let's take a look at this React code. First, I need to check for rendering issues where the UI isn't properly rendered. The grid is created using a map over the grid state, but the structure might be off. The grid is a 20x10 array, but in the JSX, they're mapping grid.map((row, y) => ...) and then row.map(...). However, each row is an array of 10 elements, so the grid should be 20 rows of 10 columns. The JSX structure uses a grid-cols-10 for the outer div, which is correct. But ins
+* [렌더링 태업]: 없음
+* [유령 함수/패키지]: `rotateMatrix` 함수는 정의되어 있지만, `placeTetromino` 함수 내에서 `board`를 직접 수정하여 상태를 업데이트하지 않음. `board`를 업데이트하기 위해 `setBoard`를 사용해야 함.
+* [무한 루프]: 없음
+* [코드 짤림]: 없음 
+
+ PASS는 출력하지 않으며, 위의 목록에 따라서 다음과 같이 출력합니다:
+* [유령 함수/패키지]: rotateMatrix 함수는 정의되어 있지만, placeTetromino 함수 내에서 board를 직접 수정하여 상태를 업데이트하지 않음. board를 업데이트하기 위해 setBoard를 사용해야 함.
