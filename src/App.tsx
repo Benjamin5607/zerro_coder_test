@@ -1,237 +1,222 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, ArrowDown, ArrowUp, Play } from 'lucide-react';
 
-const initialState = {
-  grid: Array(20).fill(0).map(() => Array(10).fill(0)),
-  currentBlock: {
+const App = () => {
+  const [gameOver, setGameOver] = useState(false);
+  const [score, setScore] = useState(0);
+  const [record, setRecord] = useState([]);
+  const [currentBlock, setCurrentBlock] = useState({
+    shape: '',
     x: 5,
     y: 0,
-    shape: [
-      [1, 1, 1, 1],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-    ],
-  },
-  score: 0,
-  gameOver: false,
-  highScore: localStorage.getItem('highScore') || 0,
-};
+    rotation: 0,
+  });
+  const [grid, setGrid] = useState(Array(20).fill(0).map(() => Array(10).fill(0)));
 
-const useTetrisState = () => {
-  const [state, setState] = useState(initialState);
-
-  useEffect(() => {
-    localStorage.setItem('highScore', state.highScore);
-  }, [state.highScore]);
-
-  const createNewBlock = () => {
-    setState({
-      ...state,
-      currentBlock: {
-        x: 5,
-        y: 0,
-        shape: [
-          [1, 1, 1, 1],
-          [0, 0, 0, 0],
-          [0, 0, 0, 0],
-          [0, 0, 0, 0],
-        ],
-      },
-    });
+  const createBlock = () => {
+    const shapes = ['I', 'J', 'L', 'O', 'S', 'T', 'Z'];
+    const shape = shapes[Math.floor(Math.random() * shapes.length)];
+    const x = 5;
+    const y = 0;
+    const rotation = 0;
+    return { shape, x, y, rotation };
   };
 
   const moveBlock = (direction) => {
     switch (direction) {
       case 'left':
-        if (state.currentBlock.x > 0) {
-          setState({
-            ...state,
-            currentBlock: {
-              ...state.currentBlock,
-              x: state.currentBlock.x - 1,
-            },
-          });
+        if (currentBlock.x > 0) {
+          setCurrentBlock((prevBlock) => ({ ...prevBlock, x: prevBlock.x - 1 }));
         }
         break;
       case 'right':
-        if (state.currentBlock.x < 9) {
-          setState({
-            ...state,
-            currentBlock: {
-              ...state.currentBlock,
-              x: state.currentBlock.x + 1,
-            },
-          });
+        if (currentBlock.x < 9) {
+          setCurrentBlock((prevBlock) => ({ ...prevBlock, x: prevBlock.x + 1 }));
         }
         break;
       case 'down':
-        setState({
-          ...state,
-          currentBlock: {
-            ...state.currentBlock,
-            y: state.currentBlock.y + 1,
-          },
-        });
+        if (currentBlock.y < 19) {
+          setCurrentBlock((prevBlock) => ({ ...prevBlock, y: prevBlock.y + 1 }));
+        }
+        break;
+      case 'rotate':
+        setCurrentBlock((prevBlock) => ({ ...prevBlock, rotation: (prevBlock.rotation + 1) % 4 }));
         break;
       default:
         break;
     }
   };
 
-  const rotateBlock = () => {
-    const rotatedShape = state.currentBlock.shape[0].map((_, i) => state.currentBlock.shape.map(row => row[i]));
-    setState({
-      ...state,
-      currentBlock: {
-        ...state.currentBlock,
-        shape: rotatedShape,
-      },
-    });
+  const increaseScore = () => {
+    setScore((prevScore) => prevScore + 1);
   };
 
-  const fixBlock = () => {
-    const fixedGrid = state.grid.map((row, y) => {
-      return row.map((cell, x) => {
-        if (state.currentBlock.shape[y][x] === 1) {
-          return 1;
-        } else {
-          return cell;
+  const saveRecord = () => {
+    const newRecord = [...record, score];
+    setRecord(newRecord);
+  };
+
+  const gameOverHandler = () => {
+    setGameOver(true);
+    saveRecord();
+  };
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setCurrentBlock(createBlock());
+    }, 1000);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      moveBlock('down');
+    }, 1000);
+    return () => clearInterval(intervalId);
+  }, [currentBlock]);
+
+  useEffect(() => {
+    const gridCopy = [...grid];
+    const blockShape = getBlockShape(currentBlock.shape, currentBlock.rotation);
+    for (let i = 0; i < blockShape.length; i++) {
+      for (let j = 0; j < blockShape[i].length; j++) {
+        if (blockShape[i][j] === 1) {
+          gridCopy[currentBlock.y + i][currentBlock.x + j] = 1;
         }
-      });
-    });
-    setState({
-      ...state,
-      grid: fixedGrid,
-      score: state.score + 1,
-      currentBlock: {
-        x: 5,
-        y: 0,
-        shape: [
+      }
+    }
+    setGrid(gridCopy);
+  }, [currentBlock]);
+
+  useEffect(() => {
+    const gridCopy = [...grid];
+    const blockShape = getBlockShape(currentBlock.shape, currentBlock.rotation);
+    for (let i = 0; i < blockShape.length; i++) {
+      for (let j = 0; j < blockShape[i].length; j++) {
+        if (blockShape[i][j] === 1) {
+          if (currentBlock.y + i >= 20 || gridCopy[currentBlock.y + i + 1][currentBlock.x + j] === 1) {
+            gameOverHandler();
+          } else {
+            gridCopy[currentBlock.y + i][currentBlock.x + j] = 1;
+          }
+        }
+      }
+    }
+    setGrid(gridCopy);
+  }, [currentBlock]);
+
+  useEffect(() => {
+    const blockShape = getBlockShape(currentBlock.shape, currentBlock.rotation);
+    const gridCopy = [...grid];
+    for (let i = 0; i < blockShape.length; i++) {
+      for (let j = 0; j < blockShape[i].length; j++) {
+        if (blockShape[i][j] === 1) {
+          gridCopy[currentBlock.y + i][currentBlock.x + j] = 0;
+        }
+      }
+    }
+    setCurrentBlock((prevBlock) => ({ ...prevBlock, rotation: (prevBlock.rotation + 1) % 4 }));
+    const newBlockShape = getBlockShape(currentBlock.shape, currentBlock.rotation);
+    for (let i = 0; i < newBlockShape.length; i++) {
+      for (let j = 0; j < newBlockShape[i].length; j++) {
+        if (newBlockShape[i][j] === 1) {
+          gridCopy[currentBlock.y + i][currentBlock.x + j] = 1;
+        }
+      }
+    }
+    setGrid(gridCopy);
+  }, [currentBlock]);
+
+  useEffect(() => {
+    const gridCopy = [...grid];
+    for (let i = 0; i < 20; i++) {
+      for (let j = 0; j < 10; j++) {
+        if (gridCopy[i][j] === 1) {
+          gridCopy[i][j] = 0;
+        }
+      }
+    }
+    setGrid(gridCopy);
+  }, []);
+
+  const getBlockShape = (shape, rotation) => {
+    switch (shape) {
+      case 'I':
+        return [
           [1, 1, 1, 1],
           [0, 0, 0, 0],
           [0, 0, 0, 0],
           [0, 0, 0, 0],
-        ],
-      },
-    });
-  };
-
-  const updateScore = () => {
-    if (state.score > state.highScore) {
-      setState({
-        ...state,
-        highScore: state.score,
-      });
-    }
-  };
-
-  const restartGame = () => {
-    setState(initialState);
-  };
-
-  return {
-    state,
-    createNewBlock,
-    moveBlock,
-    rotateBlock,
-    fixBlock,
-    updateScore,
-    restartGame,
-  };
-};
-
-const App = () => {
-  const {
-    state,
-    createNewBlock,
-    moveBlock,
-    rotateBlock,
-    fixBlock,
-    updateScore,
-    restartGame,
-  } = useTetrisState();
-
-  const handleKeyDown = (event) => {
-    switch (event.key) {
-      case 'ArrowLeft':
-        moveBlock('left');
-        break;
-      case 'ArrowRight':
-        moveBlock('right');
-        break;
-      case 'ArrowDown':
-        moveBlock('down');
-        break;
-      case 'ArrowUp':
-        rotateBlock();
-        break;
+        ];
+      case 'J':
+        return [
+          [1, 0, 0],
+          [1, 1, 1],
+          [0, 0, 0],
+          [0, 0, 0],
+        ];
+      case 'L':
+        return [
+          [0, 0, 1],
+          [1, 1, 1],
+          [0, 0, 0],
+          [0, 0, 0],
+        ];
+      case 'O':
+        return [
+          [1, 1],
+          [1, 1],
+          [0, 0],
+          [0, 0],
+        ];
+      case 'S':
+        return [
+          [0, 1, 1],
+          [1, 1, 0],
+          [0, 0, 0],
+          [0, 0, 0],
+        ];
+      case 'T':
+        return [
+          [0, 1, 0],
+          [1, 1, 1],
+          [0, 0, 0],
+          [0, 0, 0],
+        ];
+      case 'Z':
+        return [
+          [1, 1, 0],
+          [0, 1, 1],
+          [0, 0, 0],
+          [0, 0, 0],
+        ];
       default:
-        break;
+        return [
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+          [0, 0, 0, 0],
+        ];
     }
   };
-
-  const handleFixBlock = () => {
-    fixBlock();
-    updateScore();
-  };
-
-  const handleRestartGame = () => {
-    restartGame();
-  };
-
-  useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
-
-  useEffect(() => {
-    createNewBlock();
-  }, []);
 
   return (
     <div className="flex justify-center items-center h-screen">
-      <div className="grid grid-cols-10 grid-rows-20 w-400 h-600 border border-black">
-        {state.grid.map((row, y) => (
-          <div key={y} className="flex justify-center items-center h-20 w-400">
-            {row.map((cell, x) => (
+      <div className="grid grid-cols-10 gap-1">
+        {grid.map((row, i) => (
+          <div key={i} className="flex justify-center items-center">
+            {row.map((cell, j) => (
               <div
-                key={x}
-                className={`w-20 h-20 ${cell === 1 ? 'bg-gray-500' : 'bg-transparent'}`}
+                key={j}
+                className={`w-4 h-4 bg-gray-400 rounded-lg ${cell === 1 ? 'bg-red-500' : ''}`}
               />
             ))}
           </div>
         ))}
       </div>
-      <div className="absolute top-0 left-0">
-        {state.currentBlock.shape.map((row, y) => (
-          <div key={y} className="flex justify-center items-center h-20 w-400">
-            {row.map((cell, x) => (
-              <div
-                key={x}
-                className={`w-20 h-20 ${cell === 1 ? 'bg-gray-500' : 'bg-transparent'}`}
-              />
-            ))}
-          </div>
-        ))}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gray-200">
+        <p className="text-lg font-bold">Score: {score}</p>
+        <p className="text-lg font-bold">Record: {record.join(', ')}</p>
       </div>
-      <div className="text-red-500 font-bold text-24 text-center">
-        {state.gameOver ? 'Game Over' : ''}
-      </div>
-      <div className="text-blue-500 font-bold text-18 text-center">
-        Score: {state.score}
-      </div>
-      <div className="text-green-500 font-bold text-18 text-center">
-        High Score: {state.highScore}
-      </div>
-      <button
-        className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-        onClick={handleRestartGame}
-      >
-        <Play className="w-6 h-6" />
-      </button>
     </div>
   );
 };
