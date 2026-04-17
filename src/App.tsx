@@ -1,121 +1,107 @@
+import React from 'react';
+
 export default function App() {
-  const [gameStarted, setGameStarted] = useState(false);
-  const [gameOver, setGameOver] = useState(false);
-  const [score, setScore] = useState(0);
-  const [blocks, setBlocks] = useState([]);
-  const [currentBlock, setCurrentBlock] = useState({
-    type: 'I',
-    x: 5,
-    y: 0,
-    rotation: 0,
-  });
-  const [nextBlock, setNextBlock] = useState({
-    type: 'I',
-    x: 5,
-    y: 0,
-    rotation: 0,
-  });
+  const { state, updateState } = useTetrisState();
 
-  const startGame = () => {
-    setGameStarted(true);
-    setGameOver(false);
-    setScore(0);
-    setBlocks([]);
-    setCurrentBlock({
-      type: 'I',
-      x: 5,
-      y: 0,
-      rotation: 0,
-    });
-    setNextBlock({
-      type: 'I',
-      x: 5,
-      y: 0,
-      rotation: 0,
-    });
+  const handleBlockMove = (direction) => {
+    const newBlock = moveBlock(state.currentBlock, direction);
+    updateState({ currentBlock: newBlock });
   };
 
-  const endGame = () => {
-    setGameStarted(false);
-    setGameOver(true);
+  const handleBlockRotation = (rotation) => {
+    const newBlock = rotateBlock(state.currentBlock, rotation);
+    updateState({ currentBlock: newBlock });
   };
 
-  const moveBlockLeft = () => {
-    if (currentBlock.x > 0) {
-      setCurrentBlock((prevBlock) => ({ ...prevBlock, x: prevBlock.x - 1 }));
+  const handleBlockFall = () => {
+    const newBlock = fallBlock(state.currentBlock, state.grid);
+    updateState({ currentBlock: newBlock });
+  };
+
+  const moveBlock = (block, direction) => {
+    switch (direction) {
+      case 'left':
+        return { ...block, x: block.x - 1 };
+      case 'right':
+        return { ...block, x: block.x + 1 };
+      default:
+        return block;
     }
   };
 
-  const moveBlockRight = () => {
-    if (currentBlock.x < 10) {
-      setCurrentBlock((prevBlock) => ({ ...prevBlock, x: prevBlock.x + 1 }));
+  const rotateBlock = (block, rotation) => {
+    switch (rotation) {
+      case 'clockwise':
+        return {
+          x: block.y,
+          y: -block.x,
+          color: block.color,
+          shape: block.shape,
+        };
+      case 'counter-clockwise':
+        return {
+          x: -block.y,
+          y: block.x,
+          color: block.color,
+          shape: block.shape,
+        };
+      default:
+        return block;
     }
   };
 
-  const rotateBlock = () => {
-    if (currentBlock.rotation < 3) {
-      setCurrentBlock((prevBlock) => ({ ...prevBlock, rotation: prevBlock.rotation + 1 }));
+  const fallBlock = (block, grid) => {
+    const newBlock = { ...block, y: block.y + 1 };
+    if (newBlock.y + newBlock.shape.length > grid.length) {
+      return { ...block, y: grid.length - newBlock.shape.length };
     }
-  };
-
-  const placeBlock = () => {
-    if (blocks.length > 0) {
-      const newBlocks = [...blocks];
-      newBlocks.push(currentBlock);
-      setBlocks(newBlocks);
-      setScore((prevScore) => prevScore + 1);
-    }
-  };
-
-  const resetGame = () => {
-    startGame();
+    return newBlock;
   };
 
   return (
     <div className="flex flex-col items-center justify-center h-screen">
-      <div className="w-full max-w-md mx-auto">
-        <div className="bg-gray-200 p-4 rounded-md shadow-md">
-          <h2 className="text-lg font-bold mb-2">Tetris Game</h2>
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={startGame}
-          >
-            Start Game
-          </button>
-          <button
-            className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-            onClick={endGame}
-          >
-            End Game
-          </button>
-          <div className="flex flex-col items-center justify-center mt-4">
-            <div className="w-full max-w-md mx-auto">
-              <div className="bg-gray-200 p-4 rounded-md shadow-md">
-                <h2 className="text-lg font-bold mb-2">Score: {score}</h2>
-                <div className="flex flex-col items-center justify-center">
-                  <div className="w-full max-w-md mx-auto">
-                    <div className="bg-gray-200 p-4 rounded-md shadow-md">
-                      <h2 className="text-lg font-bold mb-2">Blocks:</h2>
-                      <ul>
-                        {blocks.map((block, index) => (
-                          <li key={index}>
-                            <div
-                              className="bg-gray-400 w-4 h-4 rounded-md"
-                              style={{
-                                transform: `translate(${block.x * 20}px, ${block.y * 20}px) rotate(${block.rotation * 90}deg)`,
-                              }}
-                            />
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+      <div className="grid grid-cols-10 gap-2">
+        {state.grid.map((row, y) => (
+          <div key={y} className="flex flex-row">
+            {row.map((block, x) => (
+              <Block
+                key={x}
+                x={x}
+                y={y}
+                color={block.color}
+                shape={block.shape}
+              />
+            ))}
           </div>
-        </div>
+        ))}
       </div>
+      <BlockRotation block={state.currentBlock} rotation={state.rotation} />
+      <BlockFall block={state.currentBlock} grid={state.grid} updateState={updateState} />
+      <Score state={state} updateState={updateState} />
+      <button
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        onClick={() => handleBlockMove('left')}
+      >
+        Left
+      </button>
+      <button
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        onClick={() => handleBlockMove('right')}
+      >
+        Right
+      </button>
+      <button
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        onClick={() => handleBlockRotation('clockwise')}
+      >
+        Clockwise
+      </button>
+      <button
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        onClick={() => handleBlockFall()}
+      >
+        Fall
+      </button>
     </div>
   );
 }
