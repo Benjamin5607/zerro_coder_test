@@ -1,7 +1,7 @@
 # Zerro AI Project
 
 ### 🎯 목표
-> 슈퍼마리오 게임 만들어봐
+> 축구 게임 만들어봐
 
 ### 🛡️ QA Report
 PASS
