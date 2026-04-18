@@ -1,98 +1,66 @@
 import React, { useState, useEffect } from 'react';
+import { ArrowDown } from 'lucide-react';
+
+const CONTAINER_WIDTH = 256;
+const CONTAINER_HEIGHT = 384;
+const BLOCK_SIZE = 48;
+const FALL_SPEED = 2;
+const UPDATE_INTERVAL = 50;
+const BLOCK_COUNT = 5;
 
 const App = () => {
-  const [blocks, setBlocks] = useState<Array<{ id: number; color: string } | null>>([]);
-  const [isMoving, setIsMoving] = useState(false);
-  const [matchesGoal, setMatchesGoal] = useState(false);
-  const [hasNullDefenses, setHasNullDefenses] = useState(false);
+  const [blocks, setBlocks] = useState(
+    Array.from({ length: BLOCK_COUNT }, (_, i) => ({
+      id: i,
+      top: Math.random() * (CONTAINER_HEIGHT - BLOCK_SIZE),
+      left: Math.random() * (CONTAINER_WIDTH - BLOCK_SIZE),
+    }))
+  );
+  const [running, setRunning] = useState(true);
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (!isMoving) {
-        setIsMoving(true);
-        const newBlocks: Array<{ id: number; color: string } | null> = [];
-        for (let i = 0; i < 10; i++) {
-          if (Math.random() < 0.5) {
-            newBlocks.push({ id: i, color: 'blue' });
-          } else {
-            newBlocks.push(null);
+    if (!running) return;
+    const id = setInterval(() => {
+      setBlocks(prev =>
+        prev.map(b => {
+          let newTop = b.top + FALL_SPEED;
+          if (newTop > CONTAINER_HEIGHT - BLOCK_SIZE) {
+            newTop = 0;
+            return { ...b, top: newTop, left: Math.random() * (CONTAINER_WIDTH - BLOCK_SIZE) };
           }
-        }
-        setBlocks(newBlocks);
-      }
-    }, 1000);
-    return () => clearInterval(intervalId);
-  }, [isMoving]);
-
-  useEffect(() => {
-    if (blocks.length > 0) {
-      const hasNull = blocks.some((block) => block === null);
-      setHasNullDefenses(hasNull);
-    }
-  }, [blocks]);
-
-  const handleMove = () => {
-    if (!isMoving && blocks.length > 0) {
-      setIsMoving(true);
-      const newBlocks = blocks.map((block, index) => {
-        if (block !== null && index < blocks.length - 1) {
-          return { ...block, id: block.id + 1 };
-        }
-        return block;
-      });
-      setBlocks(newBlocks);
-    }
-  };
-
-  const handleCheckGoal = () => {
-    if (blocks.length > 0) {
-      const goalBlock = blocks.find((block) => block !== null && block.id >= 9);
-      if (goalBlock) {
-        setMatchesGoal(true);
-      }
-    }
-  };
+          return { ...b, top: newTop };
+        })
+      );
+    }, UPDATE_INTERVAL);
+    return () => clearInterval(id);
+  }, [running]);
 
   return (
-    <div className="w-full h-screen flex flex-col items-center justify-center bg-gray-100">
-      <div className="w-80 h-80 flex flex-col items-center justify-center space-y-2">
-        {blocks.map((block, index) => (
-          <div key={index} className="w-10 h-10">
-            {block !== null && (
-              <div className="w-full h-full bg-blue-500 flex items-center justify-center">
-                <div className="text-white" style={{ fontSize: 20 }}>&#8592;</div>
-              </div>
-            )}
-            {block === null && (
-              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                <div className="text-gray-500" style={{ fontSize: 20 }}>&#9658;</div>
-              </div>
-            )}
-          </div>
+    <div className="flex flex-col items-center mt-8">
+      <div
+        className="relative bg-gray-200 border-2 border-gray-400"
+        style={{ width: CONTAINER_WIDTH, height: CONTAINER_HEIGHT }}
+      >
+        {blocks.map(b => (
+          <div
+            key={b.id}
+            className="absolute bg-blue-500"
+            style={{
+              width: BLOCK_SIZE,
+              height: BLOCK_SIZE,
+              top: b.top,
+              left: b.left,
+            }}
+          />
         ))}
       </div>
       <button
-        className="w-20 h-10 bg-blue-500 text-white rounded-lg"
-        onClick={handleMove}
+        className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center"
+        onClick={() => setRunning(!running)}
       >
-        Move
+        {running ? <ArrowDown className="mr-2" /> : null}
+        {running ? 'Pause' : 'Resume'}
       </button>
-      <button
-        className="w-20 h-10 bg-green-500 text-white rounded-lg"
-        onClick={handleCheckGoal}
-      >
-        Check Goal
-      </button>
-      {matchesGoal && (
-        <div className="w-full h-10 bg-green-500 text-white flex items-center justify-center">
-          Goal Reached!
-        </div>
-      )}
-      {hasNullDefenses && (
-        <div className="w-full h-10 bg-red-500 text-white flex items-center justify-center">
-          Null Defenses Detected!
-        </div>
-      )}
     </div>
   );
 };
