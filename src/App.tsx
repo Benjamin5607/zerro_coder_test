@@ -1,235 +1,198 @@
 import React, { useState, useEffect } from 'react';
 
 const Tetris = () => {
-  const [gameStarted, setGameStarted] = useState(false);
+  // 게임 상태
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
-  const [speed, setSpeed] = useState(1000);
-  const [block, setBlock] = useState(null);
-  const [board, setBoard] = useState([
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  ]);
+  const [grid, setGrid] = useState(Array(20).fill(null).map(() => Array(10).fill(null)));
+  const [currentBlock, setCurrentBlock] = useState(null);
+  const [nextBlock, setNextBlock] = useState(null);
 
+  // 블록 정의
   const blocks = [
+    // I-Shape
     [
-      [1, 1],
-      [1, 1],
+      [1, 1, 1, 1]
     ],
-    [
-      [1, 1, 1],
-      [0, 1, 0],
-    ],
-    [
-      [0, 1, 0],
-      [1, 1, 1],
-    ],
-    [
-      [1, 1, 0],
-      [0, 1, 1],
-    ],
-    [
-      [0, 1, 1],
-      [1, 1, 0],
-    ],
+    // J-Shape
     [
       [1, 0, 0],
-      [1, 1, 1],
+      [1, 1, 1]
     ],
+    // L-Shape
     [
       [0, 0, 1],
-      [1, 1, 1],
+      [1, 1, 1]
     ],
+    // O-Shape
+    [
+      [1, 1],
+      [1, 1]
+    ],
+    // S-Shape
+    [
+      [0, 1, 1],
+      [1, 1, 0]
+    ],
+    // T-Shape
+    [
+      [0, 1, 0],
+      [1, 1, 1]
+    ],
+    // Z-Shape
+    [
+      [1, 1, 0],
+      [0, 1, 1]
+    ]
   ];
 
-  const handleStartGame = () => {
-    setGameStarted(true);
+  // 게임 시작
+  const startGame = () => {
     setGameOver(false);
     setScore(0);
     setLevel(1);
-    setSpeed(1000);
-    setBlock(null);
-    setBoard([
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ]);
+    setGrid(Array(20).fill(null).map(() => Array(10).fill(null)));
+    spawnBlock();
   };
 
-  const handleMoveBlock = (direction) => {
-    if (block) {
-      const newBlock = { ...block };
-      if (direction === 'left') {
-        newBlock.x -= 1;
-      } else if (direction === 'right') {
-        newBlock.x += 1;
-      } else if (direction === 'down') {
-        newBlock.y += 1;
-      }
-      setBlock(newBlock);
-    }
+  // 블록 생성
+  const spawnBlock = () => {
+    const randomIndex = Math.floor(Math.random() * blocks.length);
+    const block = blocks[randomIndex];
+    setCurrentBlock(block);
+    setNextBlock(blocks[(randomIndex + 1) % blocks.length]);
   };
 
-  const handleRotateBlock = () => {
-    if (block) {
-      const newBlock = { ...block };
-      newBlock.rotation += 1;
-      setBlock(newBlock);
-    }
+  // 블록 회전
+  const rotateBlock = () => {
+    if (!currentBlock) return;
+    const rotatedBlock = currentBlock.map((row) => row.slice().reverse());
+    setCurrentBlock(rotatedBlock);
   };
 
-  const handleDeleteBlock = () => {
-    if (block) {
-      const newBoard = [...board];
-      for (let i = 0; i < block.shape.length; i++) {
-        for (let j = 0; j < block.shape[i].length; j++) {
-          if (block.shape[i][j] === 1) {
-            newBoard[block.y + i][block.x + j] = 0;
+  // 블록 이동
+  const moveBlock = (dx, dy) => {
+    if (!currentBlock) return;
+    const newBlock = currentBlock.map((row, y) => row.map((cell, x) => {
+      const newX = x + dx;
+      const newY = y + dy;
+      if (newX < 0 || newX >= 10 || newY < 0 || newY >= 20) return 0;
+      if (grid[newY] && grid[newY][newX] !== null) return 0;
+      return cell;
+    }));
+    setCurrentBlock(newBlock);
+  };
+
+  // 충돌 감지
+  const checkCollision = () => {
+    if (!currentBlock) return;
+    for (let y = 0; y < currentBlock.length; y++) {
+      for (let x = 0; x < currentBlock[y].length; x++) {
+        if (currentBlock[y][x] === 1) {
+          const newX = x;
+          const newY = y + 1;
+          if (newY >= 20 || (grid[newY] && grid[newY][newX] !== null)) {
+            return true;
           }
         }
       }
-      setBoard(newBoard);
-      setBlock(null);
-    }
-  };
-
-  const handleCheckCollision = () => {
-    if (block) {
-      const newBoard = [...board];
-      for (let i = 0; i < block.shape.length; i++) {
-        for (let j = 0; j < block.shape[i].length; j++) {
-          if (block.shape[i][j] === 1) {
-            if (block.x + j < 0 || block.x + j >= 10 || block.y + i >= 20) {
-              return true;
-            }
-            if (newBoard[block.y + i][block.x + j] === 1) {
-              return true;
-            }
-          }
-        }
-      }
-      return false;
     }
     return false;
   };
 
-  const handleCreateBlock = () => {
-    const randomIndex = Math.floor(Math.random() * blocks.length);
-    const newBlock = {
-      shape: blocks[randomIndex],
-      x: 3,
-      y: 0,
-      rotation: 0,
-    };
-    setBlock(newBlock);
-  };
-
-  const handleUpdateScore = () => {
-    const newScore = score + 1;
-    setScore(newScore);
-  };
-
-  const handleUpdateLevel = () => {
-    const newLevel = level + 1;
-    setLevel(newLevel);
-  };
-
-  const handleUpdateSpeed = () => {
-    const newSpeed = speed - 100;
-    setSpeed(newSpeed);
-  };
-
-  useEffect(() => {
-    if (gameStarted) {
-      const intervalId = setInterval(() => {
-        if (block) {
-          handleMoveBlock('down');
-          if (handleCheckCollision()) {
-            handleDeleteBlock();
-            handleCreateBlock();
-          }
-        } else {
-          handleCreateBlock();
+  // 점수 계산
+  const calculateScore = () => {
+    let score = 0;
+    for (let y = 0; y < 20; y++) {
+      let rowFull = true;
+      for (let x = 0; x < 10; x++) {
+        if (grid[y] && grid[y][x] === null) {
+          rowFull = false;
+          break;
         }
-      }, speed);
-      return () => clearInterval(intervalId);
+      }
+      if (rowFull) {
+        score += 100;
+        grid.splice(y, 1);
+        grid.unshift(Array(10).fill(null));
+      }
     }
-  }, [gameStarted, block, speed]);
+    setScore(score);
+  };
 
+  // 레벨 업
+  const levelUp = () => {
+    setLevel(level + 1);
+  };
+
+  // 게임 로직
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (gameOver) return;
+      moveBlock(0, 1);
+      if (checkCollision()) {
+        const newGrid = grid.slice();
+        for (let y = 0; y < currentBlock.length; y++) {
+          for (let x = 0; x < currentBlock[y].length; x++) {
+            if (currentBlock[y][x] === 1) {
+              const newX = x;
+              const newY = y;
+              if (newY >= 0 && newY < 20 && newX >= 0 && newX < 10) {
+                newGrid[newY][newX] = 1;
+              }
+            }
+          }
+        }
+        setGrid(newGrid);
+        calculateScore();
+        spawnBlock();
+      }
+    }, 1000 / level);
+    return () => clearInterval(intervalId);
+  }, [gameOver, level, currentBlock, grid]);
+
+  // 사용자 입력 처리
+  const handleKeyDown = (e) => {
+    switch (e.key) {
+      case 'ArrowLeft':
+        moveBlock(-1, 0);
+        break;
+      case 'ArrowRight':
+        moveBlock(1, 0);
+        break;
+      case 'ArrowDown':
+        moveBlock(0, 1);
+        break;
+      case 'ArrowUp':
+        rotateBlock();
+        break;
+      default:
+        break;
+    }
+  };
+
+  // 렌더링
   return (
-    <div>
-      {gameStarted ? (
-        <div>
-          <h1>Score: {score}</h1>
-          <h1>Level: {level}</h1>
-          <div>
-            {board.map((row, index) => (
-              <div key={index}>
-                {row.map((cell, cellIndex) => (
-                  <div key={cellIndex} style={{ width: 20, height: 20, backgroundColor: cell === 1 ? 'black' : 'white' }} />
-                ))}
-              </div>
-            ))}
-          </div>
-          {block ? (
-            <div>
-              <h1>Block:</h1>
-              {block.shape.map((row, index) => (
-                <div key={index}>
-                  {row.map((cell, cellIndex) => (
-                    <div key={cellIndex} style={{ width: 20, height: 20, backgroundColor: cell === 1 ? 'black' : 'white' }} />
-                  ))}
-                </div>
-              ))}
-            </div>
-          ) : null}
-          <button onClick={() => handleMoveBlock('left')}>Left</button>
-          <button onClick={() => handleMoveBlock('right')}>Right</button>
-          <button onClick={() => handleMoveBlock('down')}>Down</button>
-          <button onClick={handleRotateBlock}>Rotate</button>
-          <button onClick={handleDeleteBlock}>Delete</button>
+    <div className="h-screen w-screen flex justify-center items-center">
+      <div className="grid grid-rows-20 grid-cols-10 gap-1 w-64 h-64 border border-gray-400">
+        {grid.map((row, y) => row.map((cell, x) => (
+          <div key={`${y},${x}`} className={`w-6 h-6 ${cell === 1 ? 'bg-blue-500' : 'bg-gray-200'}`} />
+        )))}
+      </div>
+      <div className="ml-4">
+        <h1 className="text-2xl font-bold">Tetris</h1>
+        <p className="text-xl">Score: {score}</p>
+        <p className="text-xl">Level: {level}</p>
+        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={startGame}>Start Game</button>
+      </div>
+      <div className="absolute top-0 left-0">
+        <div className="grid grid-rows-4 grid-cols-4 gap-1 w-16 h-16 border border-gray-400">
+          {nextBlock && nextBlock.map((row, y) => row.map((cell, x) => (
+            <div key={`${y},${x}`} className={`w-4 h-4 ${cell === 1 ? 'bg-blue-500' : 'bg-gray-200'}`} />
+          )))}
         </div>
-      ) : (
-        <div>
-          <h1>Tetris Game</h1>
-          <button onClick={handleStartGame}>Start Game</button>
-        </div>
-      )}
+      </div>
     </div>
   );
 };
