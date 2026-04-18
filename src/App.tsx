@@ -1,214 +1,165 @@
 import React, { useState, useEffect } from 'react';
 
-const Tetris = () => {
-  // 게임 보드 크기
-  const boardWidth = 10;
-  const boardHeight = 20;
-
-  // 블록 타입
-  const blockTypes = [
-    // I-Shape
-    [
-      [1, 1, 1, 1]
-    ],
-    // J-Shape
-    [
-      [1, 0, 0],
-      [1, 1, 1]
-    ],
-    // L-Shape
-    [
-      [0, 0, 1],
-      [1, 1, 1]
-    ],
-    // O-Shape
-    [
-      [1, 1],
-      [1, 1]
-    ],
-    // S-Shape
-    [
-      [0, 1, 1],
-      [1, 1, 0]
-    ],
-    // T-Shape
-    [
-      [0, 1, 0],
-      [1, 1, 1]
-    ],
-    // Z-Shape
-    [
-      [1, 1, 0],
-      [0, 1, 1]
-    ]
-  ];
-
-  // 게임 상태
-  const [gameOver, setGameOver] = useState(false);
+const MarioGame = () => {
+  // 게임 상태 초기화
+  const [marioX, setMarioX] = useState(100);
+  const [marioY, setMarioY] = useState(100);
+  const [enemies, setEnemies] = useState([
+    { x: 200, y: 200 },
+    { x: 300, y: 300 },
+  ]);
+  const [coins, setCoins] = useState([
+    { x: 150, y: 150 },
+    { x: 250, y: 250 },
+  ]);
+  const [powerUps, setPowerUps] = useState([
+    { x: 400, y: 400 },
+  ]);
   const [score, setScore] = useState(0);
-  const [board, setBoard] = useState(Array(boardHeight).fill(0).map(() => Array(boardWidth).fill(0)));
-  const [currentBlock, setCurrentBlock] = useState(null);
-  const [currentBlockX, setCurrentBlockX] = useState(0);
-  const [currentBlockY, setCurrentBlockY] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
 
-  // 블록 생성
-  const createBlock = () => {
-    const blockType = blockTypes[Math.floor(Math.random() * blockTypes.length)];
-    setCurrentBlock(blockType);
-    setCurrentBlockX(boardWidth / 2 - blockType[0].length / 2);
-    setCurrentBlockY(0);
-  };
-
-  // 블록 회전
-  const rotateBlock = () => {
-    if (!currentBlock) return;
-    const rotatedBlock = currentBlock.map(row => row.slice().reverse());
-    setCurrentBlock(rotatedBlock);
-  };
-
-  // 블록 이동
-  const moveBlock = (dx, dy) => {
-    if (!currentBlock) return;
-    const newX = currentBlockX + dx;
-    const newY = currentBlockY + dy;
-    if (newX < 0 || newX + currentBlock[0].length > boardWidth || newY < 0 || newY + currentBlock.length > boardHeight) return;
-    if (checkCollision(newX, newY)) return;
-    setCurrentBlockX(newX);
-    setCurrentBlockY(newY);
-  };
-
-  // 충돌 감지
-  const checkCollision = (x, y) => {
-    if (!currentBlock) return false;
-    for (let i = 0; i < currentBlock.length; i++) {
-      for (let j = 0; j < currentBlock[i].length; j++) {
-        if (currentBlock[i][j] === 1 && (board[y + i] && board[y + i][x + j] === 1)) return true;
-      }
+  // 사용자 입력 처리
+  const handleKeyPress = (e) => {
+    if (e.key === 'ArrowUp') {
+      setMarioY(marioY - 10);
+    } else if (e.key === 'ArrowDown') {
+      setMarioY(marioY + 10);
+    } else if (e.key === 'ArrowLeft') {
+      setMarioX(marioX - 10);
+    } else if (e.key === 'ArrowRight') {
+      setMarioX(marioX + 10);
     }
-    return false;
   };
 
-  // 블록 고정
-  const fixBlock = () => {
-    if (!currentBlock) return;
-    for (let i = 0; i < currentBlock.length; i++) {
-      for (let j = 0; j < currentBlock[i].length; j++) {
-        if (currentBlock[i][j] === 1) {
-          if (board[currentBlockY + i] && board[currentBlockY + i][currentBlockX + j] !== undefined) {
-            board[currentBlockY + i][currentBlockX + j] = 1;
+  // 적 캐릭터 자동 이동
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setEnemies((prevEnemies) => {
+        return prevEnemies.map((enemy) => {
+          if (enemy.x < marioX) {
+            return { x: enemy.x + 5, y: enemy.y };
+          } else if (enemy.x > marioX) {
+            return { x: enemy.x - 5, y: enemy.y };
+          } else {
+            return enemy;
           }
-        }
-      }
-    }
-    setBoard([...board]);
-    createBlock();
-  };
+        });
+      });
+    }, 1000);
+    return () => clearInterval(intervalId);
+  }, [marioX]);
 
-  // 게임 오버 조건
-  const checkGameOver = () => {
-    if (!currentBlock) return false;
-    for (let i = 0; i < currentBlock[0].length; i++) {
-      if (board[currentBlockY][currentBlockX + i] === 1) return true;
-    }
-    return false;
-  };
-
-  // 점수 계산
-  const calculateScore = () => {
-    let score = 0;
-    for (let i = 0; i < boardHeight; i++) {
-      let isFullRow = true;
-      for (let j = 0; j < boardWidth; j++) {
-        if (board[i][j] === 0) {
-          isFullRow = false;
-          break;
-        }
-      }
-      if (isFullRow) {
-        score += 100;
-        board.splice(i, 1);
-        board.unshift(Array(boardWidth).fill(0));
-        i--;
-      }
-    }
-    setScore(score);
-  };
-
-  // 게임 시작
-  const startGame = () => {
-    setGameOver(false);
-    setScore(0);
-    setBoard(Array(boardHeight).fill(0).map(() => Array(boardWidth).fill(0)));
-    createBlock();
-  };
-
-  // 게임 종료
-  const endGame = () => {
-    setGameOver(true);
-  };
-
-  // 키보드 이벤트 처리
-  const handleKeyDown = (e) => {
-    switch (e.key) {
-      case 'ArrowLeft':
-        moveBlock(-1, 0);
-        break;
-      case 'ArrowRight':
-        moveBlock(1, 0);
-        break;
-      case 'ArrowDown':
-        moveBlock(0, 1);
-        break;
-      case 'ArrowUp':
-        rotateBlock();
-        break;
-      default:
-        break;
-    }
-  };
-
+  // 아이템 수집 및 사용
   useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
+    const intervalId = setInterval(() => {
+      setCoins((prevCoins) => {
+        return prevCoins.filter((coin) => {
+          if (Math.abs(coin.x - marioX) < 10 && Math.abs(coin.y - marioY) < 10) {
+            setScore((prevScore) => prevScore + 10);
+            return false;
+          } else {
+            return true;
+          }
+        });
+      });
+      setPowerUps((prevPowerUps) => {
+        return prevPowerUps.filter((powerUp) => {
+          if (Math.abs(powerUp.x - marioX) < 10 && Math.abs(powerUp.y - marioY) < 10) {
+            setScore((prevScore) => prevScore + 50);
+            return false;
+          } else {
+            return true;
+          }
+        });
+      });
+    }, 100);
+    return () => clearInterval(intervalId);
+  }, [marioX, marioY]);
 
+  // 게임 오버 또는 클리어 시 결과 처리
   useEffect(() => {
-    if (checkGameOver()) {
-      endGame();
+    if (enemies.some((enemy) => Math.abs(enemy.x - marioX) < 10 && Math.abs(enemy.y - marioY) < 10)) {
+      setGameOver(true);
+    } else if (score >= 1000) {
+      setGameOver(true);
     }
-  }, [currentBlock, currentBlockX, currentBlockY]);
+  }, [enemies, marioX, marioY, score]);
 
-  useEffect(() => {
-    if (currentBlock) {
-      const intervalId = setInterval(() => {
-        moveBlock(0, 1);
-      }, 1000);
-      return () => {
-        clearInterval(intervalId);
-      };
+  // 2차원 배열 방어 코드
+  const getEnemyAt = (x, y) => {
+    if (enemies[y] && enemies[y][x] !== undefined) {
+      return enemies[y][x];
+    } else {
+      return null;
     }
-  }, [currentBlock, currentBlockX, currentBlockY]);
+  };
 
   return (
-    <div className="h-screen w-screen flex justify-center items-center">
+    <div className="h-screen w-screen bg-gray-200" onKeyDown={handleKeyPress} tabIndex={0}>
       {gameOver ? (
-        <div className="text-3xl font-bold">Game Over!</div>
+        <div className="text-3xl text-center mt-20">
+          {score >= 1000 ? 'Congratulations! You cleared the game!' : 'Game Over'}
+        </div>
       ) : (
-        <div className="grid grid-rows-20 grid-cols-10 gap-1 w-64 h-64 border border-gray-400">
-          {board.map((row, y) => row.map((cell, x) => (
-            <div key={`${y},${x}`} className={`w-6 h-6 ${cell === 1 ? 'bg-blue-500' : 'bg-gray-200'}`} />
-          )))}
-          {currentBlock && currentBlock.map((row, y) => row.map((cell, x) => (
-            <div key={`${y},${x}`} className={`w-6 h-6 absolute top-${(currentBlockY + y) * 8} left-${(currentBlockX + x) * 8} ${cell === 1 ? 'bg-red-500' : 'bg-gray-200'}`} />
-          )))}
+        <div>
+          <div
+            className="absolute top-0 left-0"
+            style={{
+              width: '10px',
+              height: '10px',
+              backgroundColor: 'red',
+              position: 'absolute',
+              top: `${marioY}px`,
+              left: `${marioX}px`,
+            }}
+          />
+          {enemies.map((enemy, index) => (
+            <div
+              key={index}
+              className="absolute top-0 left-0"
+              style={{
+                width: '10px',
+                height: '10px',
+                backgroundColor: 'blue',
+                position: 'absolute',
+                top: `${enemy.y}px`,
+                left: `${enemy.x}px`,
+              }}
+            />
+          ))}
+          {coins.map((coin, index) => (
+            <div
+              key={index}
+              className="absolute top-0 left-0"
+              style={{
+                width: '10px',
+                height: '10px',
+                backgroundColor: 'yellow',
+                position: 'absolute',
+                top: `${coin.y}px`,
+                left: `${coin.x}px`,
+              }}
+            />
+          ))}
+          {powerUps.map((powerUp, index) => (
+            <div
+              key={index}
+              className="absolute top-0 left-0"
+              style={{
+                width: '10px',
+                height: '10px',
+                backgroundColor: 'green',
+                position: 'absolute',
+                top: `${powerUp.y}px`,
+                left: `${powerUp.x}px`,
+              }}
+            />
+          ))}
+          <div className="text-2xl text-center mt-10">Score: {score}</div>
         </div>
       )}
-      <div className="text-2xl font-bold mt-4">Score: {score}</div>
-      <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4" onClick={startGame}>Start Game</button>
     </div>
   );
 };
 
-export default Tetris;
+export default MarioGame;
