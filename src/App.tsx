@@ -7,25 +7,24 @@ const Tetris = () => {
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
   const [block, setBlock] = useState(null);
-  const [board, setBoard] = useState([]);
-  const [userInput, setUserInput] = useState(null);
+  const [board, setBoard] = useState(Array(20).fill(null).map(() => Array(10).fill(null)));
 
   useEffect(() => {
     if (gameStarted) {
       const intervalId = setInterval(() => {
         moveBlockDown();
-      }, 1000 / level);
+      }, 1000);
       return () => clearInterval(intervalId);
     }
-  }, [gameStarted, level]);
+  }, [gameStarted]);
 
   const startGame = () => {
     setGameStarted(true);
     setGameOver(false);
     setScore(0);
     setLevel(1);
-    setBlock(generateBlock());
-    setBoard(generateBoard());
+    setBlock(createNewBlock());
+    setBoard(Array(20).fill(null).map(() => Array(10).fill(null)));
   };
 
   const endGame = () => {
@@ -33,204 +32,211 @@ const Tetris = () => {
     setGameOver(true);
   };
 
-  const generateBlock = () => {
-    const shapes = [
-      [[1, 1], [1, 1]],
-      [[1, 1, 1], [0, 1, 0]],
-      [[1, 1, 1], [1, 0, 0]],
-      [[1, 1, 1], [0, 0, 1]],
-      [[1, 1, 0], [0, 1, 1]],
-      [[0, 1, 1], [1, 1, 0]],
-      [[1, 0, 0], [1, 1, 1]],
-    ];
-    const randomIndex = Math.floor(Math.random() * shapes.length);
-    return shapes[randomIndex];
-  };
-
-  const generateBoard = () => {
-    const board = [];
-    for (let i = 0; i < 20; i++) {
-      board.push([]);
-      for (let j = 0; j < 10; j++) {
-        board[i].push(0);
-      }
-    }
-    return board;
+  const createNewBlock = () => {
+    const types = ['I', 'J', 'L', 'O', 'S', 'T', 'Z'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    const x = 5;
+    const y = 0;
+    return { type, x, y };
   };
 
   const moveBlockDown = () => {
-    if (block === null) return;
-    const newBlock = block.map((row, i) => row.slice());
-    for (let i = 0; i < newBlock.length; i++) {
-      for (let j = 0; j < newBlock[i].length; j++) {
-        if (newBlock[i][j] === 1) {
-          if (i + 1 >= board.length) {
-            mergeBlock();
-            setBlock(generateBlock());
-            return;
-          }
-          if (board[i + 1][j] === 1) {
-            mergeBlock();
-            setBlock(generateBlock());
-            return;
-          }
-        }
+    if (block) {
+      const newY = block.y + 1;
+      if (newY < 20 && !isCollision(block.x, newY)) {
+        setBlock({ ...block, y: newY });
+      } else {
+        fixBlock();
+        setBlock(createNewBlock());
       }
-    }
-    for (let i = 0; i < newBlock.length; i++) {
-      for (let j = 0; j < newBlock[i].length; j++) {
-        if (newBlock[i][j] === 1) {
-          board[i + 1][j] = 1;
-          board[i][j] = 0;
-        }
-      }
-    }
-    setBoard(board);
-  };
-
-  const mergeBlock = () => {
-    for (let i = 0; i < block.length; i++) {
-      for (let j = 0; j < block[i].length; j++) {
-        if (block[i][j] === 1) {
-          board[i][j] = 1;
-        }
-      }
-    }
-    checkLineClear();
-  };
-
-  const checkLineClear = () => {
-    let linesCleared = 0;
-    for (let i = 0; i < board.length; i++) {
-      let isFullLine = true;
-      for (let j = 0; j < board[i].length; j++) {
-        if (board[i][j] === 0) {
-          isFullLine = false;
-          break;
-        }
-      }
-      if (isFullLine) {
-        linesCleared++;
-        board.splice(i, 1);
-        board.unshift([]);
-        for (let j = 0; j < 10; j++) {
-          board[0].push(0);
-        }
-      }
-    }
-    setScore(score + linesCleared * level * 100);
-    if (linesCleared >= 10) {
-      setLevel(level + 1);
-    }
-  };
-
-  const handleUserInput = (input) => {
-    if (input === 'left') {
-      moveBlockLeft();
-    } else if (input === 'right') {
-      moveBlockRight();
-    } else if (input === 'down') {
-      moveBlockDown();
-    } else if (input === 'up') {
-      rotateBlock();
     }
   };
 
   const moveBlockLeft = () => {
-    if (block === null) return;
-    const newBlock = block.map((row, i) => row.slice());
-    for (let i = 0; i < newBlock.length; i++) {
-      for (let j = 0; j < newBlock[i].length; j++) {
-        if (newBlock[i][j] === 1) {
-          if (j - 1 < 0) return;
-          if (board[i][j - 1] === 1) return;
-        }
+    if (block) {
+      const newX = block.x - 1;
+      if (newX >= 0 && !isCollision(newX, block.y)) {
+        setBlock({ ...block, x: newX });
       }
     }
-    for (let i = 0; i < newBlock.length; i++) {
-      for (let j = 0; j < newBlock[i].length; j++) {
-        if (newBlock[i][j] === 1) {
-          board[i][j - 1] = 1;
-          board[i][j] = 0;
-        }
-      }
-    }
-    setBoard(board);
   };
 
   const moveBlockRight = () => {
-    if (block === null) return;
-    const newBlock = block.map((row, i) => row.slice());
-    for (let i = 0; i < newBlock.length; i++) {
-      for (let j = 0; j < newBlock[i].length; j++) {
-        if (newBlock[i][j] === 1) {
-          if (j + 1 >= board[0].length) return;
-          if (board[i][j + 1] === 1) return;
-        }
+    if (block) {
+      const newX = block.x + 1;
+      if (newX < 10 && !isCollision(newX, block.y)) {
+        setBlock({ ...block, x: newX });
       }
     }
-    for (let i = 0; i < newBlock.length; i++) {
-      for (let j = 0; j < newBlock[i].length; j++) {
-        if (newBlock[i][j] === 1) {
-          board[i][j + 1] = 1;
-          board[i][j] = 0;
-        }
-      }
-    }
-    setBoard(board);
   };
 
   const rotateBlock = () => {
-    if (block === null) return;
-    const newBlock = block.map((row, i) => row.slice());
-    for (let i = 0; i < newBlock.length; i++) {
-      for (let j = 0; j < newBlock[i].length; j++) {
-        if (newBlock[i][j] === 1) {
-          if (i + 1 >= board.length || j + 1 >= board[0].length) return;
-          if (board[i + 1][j + 1] === 1) return;
-        }
-      }
+    if (block) {
+      const newType = rotateType(block.type);
+      setBlock({ ...block, type: newType });
     }
-    for (let i = 0; i < newBlock.length; i++) {
-      for (let j = 0; j < newBlock[i].length; j++) {
-        if (newBlock[i][j] === 1) {
-          board[i + 1][j + 1] = 1;
-          board[i][j] = 0;
-        }
-      }
-    }
-    setBoard(board);
   };
+
+  const isCollision = (x, y) => {
+    if (y >= 20) return true;
+    if (x < 0 || x >= 10) return true;
+    if (board[y][x] !== null) return true;
+    return false;
+  };
+
+  const fixBlock = () => {
+    if (block) {
+      const { x, y, type } = block;
+      const shape = getShape(type);
+      for (let i = 0; i < shape.length; i++) {
+        for (let j = 0; j < shape[i].length; j++) {
+          if (shape[i][j] === 1) {
+            board[y + i][x + j] = type;
+          }
+        }
+      }
+      setBoard(board);
+      checkLineClear();
+    }
+  };
+
+  const checkLineClear = () => {
+    let linesCleared = 0;
+    for (let i = 0; i < 20; i++) {
+      let isFull = true;
+      for (let j = 0; j < 10; j++) {
+        if (board[i][j] === null) {
+          isFull = false;
+          break;
+        }
+      }
+      if (isFull) {
+        linesCleared++;
+        board.splice(i, 1);
+        board.unshift(Array(10).fill(null));
+      }
+    }
+    if (linesCleared > 0) {
+      setScore(score + linesCleared * level);
+      if (linesCleared >= 10) {
+        setLevel(level + 1);
+      }
+    }
+  };
+
+  const getShape = (type) => {
+    switch (type) {
+      case 'I':
+        return [
+          [1, 1, 1, 1]
+        ];
+      case 'J':
+        return [
+          [1, 0, 0],
+          [1, 1, 1]
+        ];
+      case 'L':
+        return [
+          [0, 0, 1],
+          [1, 1, 1]
+        ];
+      case 'O':
+        return [
+          [1, 1],
+          [1, 1]
+        ];
+      case 'S':
+        return [
+          [0, 1, 1],
+          [1, 1, 0]
+        ];
+      case 'T':
+        return [
+          [0, 1, 0],
+          [1, 1, 1]
+        ];
+      case 'Z':
+        return [
+          [1, 1, 0],
+          [0, 1, 1]
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const rotateType = (type) => {
+    switch (type) {
+      case 'I':
+        return 'I';
+      case 'J':
+        return 'L';
+      case 'L':
+        return 'J';
+      case 'O':
+        return 'O';
+      case 'S':
+        return 'Z';
+      case 'T':
+        return 'T';
+      case 'Z':
+        return 'S';
+      default:
+        return type;
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'ArrowLeft') {
+      moveBlockLeft();
+    } else if (e.key === 'ArrowRight') {
+      moveBlockRight();
+    } else if (e.key === 'ArrowDown') {
+      moveBlockDown();
+    } else if (e.key === 'ArrowUp') {
+      rotateBlock();
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, []);
 
   return (
     <div className="tetris-game">
       {gameOver ? (
-        <div className="game-over-screen">
-          <h1>Game Over!</h1>
-          <p>Score: {score}</p>
-          <button onClick={startGame}>Play Again</button>
-        </div>
+        <div className="game-over">Game Over!</div>
       ) : (
         <div>
-          <div className="game-board">
-            {board.map((row, i) => (
-              <div key={i} className="row">
-                {row.map((cell, j) => (
-                  <div key={j} className={`cell ${cell === 1 ? 'filled' : ''}`}></div>
+          <div className="score">Score: {score}</div>
+          <div className="level">Level: {level}</div>
+          <div className="board">
+            {board.map((row, y) => (
+              <div key={y} className="row">
+                {row.map((cell, x) => (
+                  <div key={x} className={`cell ${cell !== null ? 'filled' : ''}`}></div>
                 ))}
               </div>
             ))}
           </div>
-          <div className="game-info">
-            <p>Score: {score}</p>
-            <p>Level: {level}</p>
-          </div>
-          <div className="game-controls">
-            <button onClick={() => handleUserInput('left')}>Left</button>
-            <button onClick={() => handleUserInput('right')}>Right</button>
-            <button onClick={() => handleUserInput('down')}>Down</button>
-            <button onClick={() => handleUserInput('up')}>Up</button>
-          </div>
+          {block && (
+            <div className="block">
+              {getShape(block.type).map((row, y) => (
+                <div key={y} className="row">
+                  {row.map((cell, x) => (
+                    <div key={x} className={`cell ${cell === 1 ? 'filled' : ''}`}></div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+          <button className="start-button" onClick={startGame}>
+            Start Game
+          </button>
+          <button className="end-button" onClick={endGame}>
+            End Game
+          </button>
         </div>
       )}
     </div>
