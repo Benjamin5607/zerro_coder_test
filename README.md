@@ -1,7 +1,7 @@
 # Zerro AI Project
 
 ### 🎯 목표
-> 축구 게임 만들어봐
+> 로그인 필요 없는 축구 게임 만들어봐
 
 ### 🛡️ QA Report
 PASS
