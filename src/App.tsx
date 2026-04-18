@@ -1,66 +1,145 @@
 import React, { useState, useEffect } from 'react';
 
 const Tetris = () => {
+  // 게임 보드 크기
+  const boardWidth = 10;
+  const boardHeight = 20;
+
+  // 블록 타입
+  const blockTypes = [
+    // I-Shape
+    [
+      [1, 1, 1, 1]
+    ],
+    // J-Shape
+    [
+      [1, 0, 0],
+      [1, 1, 1]
+    ],
+    // L-Shape
+    [
+      [0, 0, 1],
+      [1, 1, 1]
+    ],
+    // O-Shape
+    [
+      [1, 1],
+      [1, 1]
+    ],
+    // S-Shape
+    [
+      [0, 1, 1],
+      [1, 1, 0]
+    ],
+    // T-Shape
+    [
+      [0, 1, 0],
+      [1, 1, 1]
+    ],
+    // Z-Shape
+    [
+      [1, 1, 0],
+      [0, 1, 1]
+    ]
+  ];
+
   // 게임 상태
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
-  const [grid, setGrid] = useState(Array(20).fill(null).map(() => Array(10).fill(null)));
+  const [board, setBoard] = useState(Array(boardHeight).fill(0).map(() => Array(boardWidth).fill(0)));
   const [currentBlock, setCurrentBlock] = useState(null);
-  const [nextBlock, setNextBlock] = useState(null);
-  const [blockX, setBlockX] = useState(0);
-  const [blockY, setBlockY] = useState(0);
+  const [currentBlockX, setCurrentBlockX] = useState(0);
+  const [currentBlockY, setCurrentBlockY] = useState(0);
 
   // 블록 생성
   const createBlock = () => {
-    const blockTypes = [
-      [[1, 1], [1, 1]],
-      [[1, 1, 1], [0, 1, 0]],
-      [[1, 1, 1], [1, 0, 0]],
-      [[1, 1, 1], [0, 0, 1]],
-      [[1, 1, 0], [0, 1, 1]],
-      [[0, 1, 1], [1, 1, 0]],
-      [[1, 0, 0], [1, 1, 1]],
-    ];
-    const randomIndex = Math.floor(Math.random() * blockTypes.length);
-    return blockTypes[randomIndex];
-  };
-
-  // 블록 이동
-  const moveBlock = (dx, dy) => {
-    if (gameOver) return;
-    let newX = blockX + dx;
-    let newY = blockY + dy;
-    if (newX < 0 || newX + currentBlock[0].length > 10) return;
-    if (newY < 0 || newY + currentBlock.length > 20) return;
-    for (let i = 0; i < currentBlock.length; i++) {
-      for (let j = 0; j < currentBlock[i].length; j++) {
-        if (currentBlock[i][j] === 1) {
-          if (grid[newY + i] && grid[newY + i][newX + j] !== undefined && grid[newY + i][newX + j] === 1) return;
-        }
-      }
-    }
-    setBlockX(newX);
-    setBlockY(newY);
+    const blockType = blockTypes[Math.floor(Math.random() * blockTypes.length)];
+    setCurrentBlock(blockType);
+    setCurrentBlockX(boardWidth / 2 - blockType[0].length / 2);
+    setCurrentBlockY(0);
   };
 
   // 블록 회전
   const rotateBlock = () => {
-    if (gameOver) return;
-    const newBlock = currentBlock.map((row) => row.slice().reverse());
-    setBlockX(blockX);
-    setBlockY(blockY);
-    setCurrentBlock(newBlock);
+    if (!currentBlock) return;
+    const rotatedBlock = currentBlock.map(row => row.slice().reverse());
+    setCurrentBlock(rotatedBlock);
+  };
+
+  // 블록 이동
+  const moveBlock = (dx, dy) => {
+    if (!currentBlock) return;
+    const newX = currentBlockX + dx;
+    const newY = currentBlockY + dy;
+    if (newX < 0 || newX + currentBlock[0].length > boardWidth || newY < 0 || newY + currentBlock.length > boardHeight) return;
+    if (checkCollision(newX, newY)) return;
+    setCurrentBlockX(newX);
+    setCurrentBlockY(newY);
+  };
+
+  // 충돌 감지
+  const checkCollision = (x, y) => {
+    if (!currentBlock) return false;
+    for (let i = 0; i < currentBlock.length; i++) {
+      for (let j = 0; j < currentBlock[i].length; j++) {
+        if (currentBlock[i][j] === 1 && (board[y + i] && board[y + i][x + j] === 1)) return true;
+      }
+    }
+    return false;
+  };
+
+  // 블록 고정
+  const fixBlock = () => {
+    if (!currentBlock) return;
+    for (let i = 0; i < currentBlock.length; i++) {
+      for (let j = 0; j < currentBlock[i].length; j++) {
+        if (currentBlock[i][j] === 1) {
+          if (board[currentBlockY + i] && board[currentBlockY + i][currentBlockX + j] !== undefined) {
+            board[currentBlockY + i][currentBlockX + j] = 1;
+          }
+        }
+      }
+    }
+    setBoard([...board]);
+    createBlock();
+  };
+
+  // 게임 오버 조건
+  const checkGameOver = () => {
+    if (!currentBlock) return false;
+    for (let i = 0; i < currentBlock[0].length; i++) {
+      if (board[currentBlockY][currentBlockX + i] === 1) return true;
+    }
+    return false;
+  };
+
+  // 점수 계산
+  const calculateScore = () => {
+    let score = 0;
+    for (let i = 0; i < boardHeight; i++) {
+      let isFullRow = true;
+      for (let j = 0; j < boardWidth; j++) {
+        if (board[i][j] === 0) {
+          isFullRow = false;
+          break;
+        }
+      }
+      if (isFullRow) {
+        score += 100;
+        board.splice(i, 1);
+        board.unshift(Array(boardWidth).fill(0));
+        i--;
+      }
+    }
+    setScore(score);
   };
 
   // 게임 시작
   const startGame = () => {
     setGameOver(false);
     setScore(0);
-    setGrid(Array(20).fill(null).map(() => Array(10).fill(null)));
-    setCurrentBlock(createBlock());
-    setNextBlock(createBlock());
-    setBlockX(0);
-    setBlockY(0);
+    setBoard(Array(boardHeight).fill(0).map(() => Array(boardWidth).fill(0)));
+    createBlock();
   };
 
   // 게임 종료
@@ -68,107 +147,66 @@ const Tetris = () => {
     setGameOver(true);
   };
 
-  // 점수 계산
-  const calculateScore = () => {
-    let newScore = score;
-    for (let i = 0; i < 20; i++) {
-      let isFullRow = true;
-      for (let j = 0; j < 10; j++) {
-        if (grid[i][j] !== 1) {
-          isFullRow = false;
-          break;
-        }
-      }
-      if (isFullRow) {
-        newScore += 100;
-        grid.splice(i, 1);
-        grid.unshift(Array(10).fill(null));
-      }
-    }
-    setScore(newScore);
-  };
-
-  // 게임 루프
-  useEffect(() => {
-    if (gameOver) return;
-    const intervalId = setInterval(() => {
-      if (blockY + currentBlock.length >= 20) {
-        endGame();
-        return;
-      }
-      for (let i = 0; i < currentBlock.length; i++) {
-        for (let j = 0; j < currentBlock[i].length; j++) {
-          if (currentBlock[i][j] === 1) {
-            if (grid[blockY + i + 1] && grid[blockY + i + 1][blockX + j] !== undefined && grid[blockY + i + 1][blockX + j] === 1) {
-              endGame();
-              return;
-            }
-          }
-        }
-      }
-      setBlockY(blockY + 1);
-    }, 500);
-    return () => clearInterval(intervalId);
-  }, [gameOver, blockY, currentBlock, grid]);
-
-  // 블록 생성 및 이동
-  useEffect(() => {
-    if (gameOver) return;
-    if (!currentBlock) {
-      setCurrentBlock(createBlock());
-    }
-    if (blockY + currentBlock.length >= 20) {
-      for (let i = 0; i < currentBlock.length; i++) {
-        for (let j = 0; j < currentBlock[i].length; j++) {
-          if (currentBlock[i][j] === 1) {
-            grid[blockY + i][blockX + j] = 1;
-          }
-        }
-      }
-      setCurrentBlock(nextBlock);
-      setNextBlock(createBlock());
-      setBlockX(0);
-      setBlockY(0);
-      calculateScore();
-    }
-  }, [gameOver, currentBlock, blockY, grid, nextBlock]);
-
-  // 사용자 입력 처리
+  // 키보드 이벤트 처리
   const handleKeyDown = (e) => {
-    if (e.key === 'ArrowLeft') {
-      moveBlock(-1, 0);
-    } else if (e.key === 'ArrowRight') {
-      moveBlock(1, 0);
-    } else if (e.key === 'ArrowDown') {
-      moveBlock(0, 1);
-    } else if (e.key === 'ArrowUp') {
-      rotateBlock();
+    switch (e.key) {
+      case 'ArrowLeft':
+        moveBlock(-1, 0);
+        break;
+      case 'ArrowRight':
+        moveBlock(1, 0);
+        break;
+      case 'ArrowDown':
+        moveBlock(0, 1);
+        break;
+      case 'ArrowUp':
+        rotateBlock();
+        break;
+      default:
+        break;
     }
   };
 
-  // 렌더링
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (checkGameOver()) {
+      endGame();
+    }
+  }, [currentBlock, currentBlockX, currentBlockY]);
+
+  useEffect(() => {
+    if (currentBlock) {
+      const intervalId = setInterval(() => {
+        moveBlock(0, 1);
+      }, 1000);
+      return () => {
+        clearInterval(intervalId);
+      };
+    }
+  }, [currentBlock, currentBlockX, currentBlockY]);
+
   return (
     <div className="h-screen w-screen flex justify-center items-center">
-      <div className="grid grid-cols-10 grid-rows-20 gap-1 w-64 h-64 border border-gray-400">
-        {grid.map((row, y) => row.map((cell, x) => (
-          <div key={`${y},${x}`} className={`w-6 h-6 ${cell === 1 ? 'bg-blue-500' : 'bg-gray-200'}`} />
-        )))}
-        {currentBlock && currentBlock.map((row, y) => row.map((cell, x) => (
-          <div key={`${y},${x}`} className={`w-6 h-6 ${cell === 1 ? 'bg-red-500' : 'bg-gray-200'} absolute top-0 left-0 translate-x-${blockX * 8}rem translate-y-${blockY * 8}rem`} />
-        )))}
-      </div>
-      <div className="ml-4">
-        <p>Score: {score}</p>
-        <p>Next Block:</p>
-        <div className="grid grid-cols-3 grid-rows-3 gap-1 w-24 h-24 border border-gray-400">
-          {nextBlock && nextBlock.map((row, y) => row.map((cell, x) => (
-            <div key={`${y},${x}`} className={`w-6 h-6 ${cell === 1 ? 'bg-green-500' : 'bg-gray-200'}`} />
+      {gameOver ? (
+        <div className="text-3xl font-bold">Game Over!</div>
+      ) : (
+        <div className="grid grid-rows-20 grid-cols-10 gap-1 w-64 h-64 border border-gray-400">
+          {board.map((row, y) => row.map((cell, x) => (
+            <div key={`${y},${x}`} className={`w-6 h-6 ${cell === 1 ? 'bg-blue-500' : 'bg-gray-200'}`} />
+          )))}
+          {currentBlock && currentBlock.map((row, y) => row.map((cell, x) => (
+            <div key={`${y},${x}`} className={`w-6 h-6 absolute top-${(currentBlockY + y) * 8} left-${(currentBlockX + x) * 8} ${cell === 1 ? 'bg-red-500' : 'bg-gray-200'}`} />
           )))}
         </div>
-        <button className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={startGame}>
-          Start Game
-        </button>
-      </div>
+      )}
+      <div className="text-2xl font-bold mt-4">Score: {score}</div>
+      <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4" onClick={startGame}>Start Game</button>
     </div>
   );
 };
