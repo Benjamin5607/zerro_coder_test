@@ -2,203 +2,254 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, ArrowDown } from 'lucide-react';
 
 const App = () => {
-  const [board, setBoard] = useState(Array(20).fill(0).map(() => Array(10).fill(0)));
-  const [currentTetromino, setCurrentTetromino] = useState(null);
-  const [nextTetromino, setNextTetromino] = useState(null);
   const [score, setScore] = useState(0);
   const [lines, setLines] = useState(0);
+  const [level, setLevel] = useState(1);
+  const [gameOver, setGameOver] = useState(false);
+  const [board, setBoard] = useState([]);
+  const [currentPiece, setCurrentPiece] = useState(null);
+  const [nextPiece, setNextPiece] = useState(null);
 
-  const tetrominos = [
+  const pieces = [
     {
+      type: 'I',
       shape: [
-        [1, 1],
-        [1, 1]
-      ],
-      color: 'red'
+        [1, 1, 1, 1]
+      ]
     },
     {
-      shape: [
-        [1, 1, 1],
-        [0, 1, 0]
-      ],
-      color: 'blue'
-    },
-    {
-      shape: [
-        [1, 1, 1],
-        [1, 0, 0]
-      ],
-      color: 'green'
-    },
-    {
-      shape: [
-        [1, 1, 1],
-        [0, 0, 1]
-      ],
-      color: 'yellow'
-    },
-    {
-      shape: [
-        [1, 1, 0],
-        [0, 1, 1]
-      ],
-      color: 'purple'
-    },
-    {
-      shape: [
-        [0, 1, 1],
-        [1, 1, 0]
-      ],
-      color: 'orange'
-    },
-    {
+      type: 'J',
       shape: [
         [1, 0, 0],
         [1, 1, 1]
-      ],
-      color: 'pink'
+      ]
+    },
+    {
+      type: 'L',
+      shape: [
+        [0, 0, 1],
+        [1, 1, 1]
+      ]
+    },
+    {
+      type: 'O',
+      shape: [
+        [1, 1],
+        [1, 1]
+      ]
+    },
+    {
+      type: 'S',
+      shape: [
+        [0, 1, 1],
+        [1, 1, 0]
+      ]
+    },
+    {
+      type: 'T',
+      shape: [
+        [0, 1, 0],
+        [1, 1, 1]
+      ]
+    },
+    {
+      type: 'Z',
+      shape: [
+        [1, 1, 0],
+        [0, 1, 1]
+      ]
     }
   ];
 
-  const getRandomTetromino = () => {
-    const randomIndex = Math.floor(Math.random() * tetrominos.length);
-    return tetrominos[randomIndex];
+  const createBoard = () => {
+    const board = [];
+    for (let i = 0; i < 20; i++) {
+      board.push([]);
+      for (let j = 0; j < 10; j++) {
+        board[i].push(0);
+      }
+    }
+    return board;
   };
 
-  const rotateTetromino = (tetromino) => {
-    if (!tetromino) return null;
-    const rotatedShape = tetromino.shape[0].map((_, colIndex) => tetromino.shape.map(row => row[colIndex]).reverse());
-    return { ...tetromino, shape: rotatedShape };
+  const spawnPiece = () => {
+    const randomIndex = Math.floor(Math.random() * pieces.length);
+    const piece = pieces[randomIndex];
+    const nextPiece = pieces[(randomIndex + 1) % pieces.length];
+    setCurrentPiece(piece);
+    setNextPiece(nextPiece);
   };
 
-  const moveTetromino = (direction) => {
-    if (!currentTetromino) return;
-    const newTetromino = { ...currentTetromino };
+  const movePiece = (direction) => {
+    if (gameOver) return;
+    const newBoard = [...board];
+    const piece = currentPiece;
+    const pieceX = 5;
+    const pieceY = 0;
+    let newX = pieceX;
+    let newY = pieceY;
     switch (direction) {
       case 'left':
-        newTetromino.x -= 1;
+        newX -= 1;
         break;
       case 'right':
-        newTetromino.x += 1;
+        newX += 1;
         break;
       case 'down':
-        newTetromino.y += 1;
+        newY += 1;
         break;
       default:
-        break;
+        return;
     }
-    setCurrentTetromino(newTetromino);
-  };
-
-  const checkCollision = (tetromino, board) => {
-    if (!tetromino || !board) return true;
-    for (let i = 0; i < tetromino.shape.length; i++) {
-      for (let j = 0; j < tetromino.shape[i].length; j++) {
-        if (tetromino.shape[i][j] === 1) {
-          const x = tetromino.x + j;
-          const y = tetromino.y + i;
-          if (x < 0 || x >= board[0].length || y < 0 || y >= board.length) return true;
-          if (board[y][x] === 1) return true;
-        }
-      }
-    }
-    return false;
-  };
-
-  const clearLines = (board) => {
-    if (!board) return 0;
-    let linesCleared = 0;
-    for (let i = 0; i < board.length; i++) {
-      if (board[i].every(cell => cell === 1)) {
-        board.splice(i, 1);
-        board.unshift(Array(10).fill(0));
-        linesCleared++;
-      }
-    }
-    return linesCleared;
-  };
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (!currentTetromino) return;
-      moveTetromino('down');
-    }, 1000);
-    return () => clearInterval(intervalId);
-  }, [currentTetromino]);
-
-  useEffect(() => {
-    if (!currentTetromino) return;
-    if (checkCollision(currentTetromino, board)) {
-      const newBoard = [...board];
-      for (let i = 0; i < currentTetromino.shape.length; i++) {
-        for (let j = 0; j < currentTetromino.shape[i].length; j++) {
-          if (currentTetromino.shape[i][j] === 1) {
-            const x = currentTetromino.x + j;
-            const y = currentTetromino.y + i;
-            newBoard[y][x] = 1;
+    for (let i = 0; i < piece.shape.length; i++) {
+      for (let j = 0; j < piece.shape[i].length; j++) {
+        if (piece.shape[i][j] === 1) {
+          if (newX + j < 0 || newX + j >= 10 || newY + i >= 20) {
+            return;
+          }
+          if (newBoard[newY + i][newX + j] === 1) {
+            return;
           }
         }
       }
-      setBoard(newBoard);
-      setLines(lines + clearLines(newBoard));
-      setScore(score + 10);
-      setCurrentTetromino(null);
     }
-  }, [currentTetromino, board]);
-
-  useEffect(() => {
-    if (!currentTetromino) {
-      const newTetromino = getRandomTetromino();
-      setCurrentTetromino({ ...newTetromino, x: 3, y: 0 });
+    for (let i = 0; i < piece.shape.length; i++) {
+      for (let j = 0; j < piece.shape[i].length; j++) {
+        if (piece.shape[i][j] === 1) {
+          newBoard[newY + i][newX + j] = 1;
+        }
+      }
     }
-  }, [currentTetromino]);
+    setBoard(newBoard);
+  };
 
-  const handleKeyPress = (event) => {
-    switch (event.key) {
-      case 'ArrowLeft':
-        moveTetromino('left');
-        break;
-      case 'ArrowRight':
-        moveTetromino('right');
-        break;
-      case 'ArrowDown':
-        moveTetromino('down');
-        break;
-      case 'ArrowUp':
-        setCurrentTetromino(rotateTetromino(currentTetromino));
-        break;
-      default:
-        break;
+  const rotatePiece = () => {
+    if (gameOver) return;
+    const newBoard = [...board];
+    const piece = currentPiece;
+    const rotatedPiece = {
+      type: piece.type,
+      shape: []
+    };
+    for (let i = 0; i < piece.shape[0].length; i++) {
+      rotatedPiece.shape.push([]);
+      for (let j = piece.shape.length - 1; j >= 0; j--) {
+        rotatedPiece.shape[i].push(piece.shape[j][i]);
+      }
+    }
+    setCurrentPiece(rotatedPiece);
+  };
+
+  const checkCollision = () => {
+    const newBoard = [...board];
+    const piece = currentPiece;
+    for (let i = 0; i < piece.shape.length; i++) {
+      for (let j = 0; j < piece.shape[i].length; j++) {
+        if (piece.shape[i][j] === 1) {
+          if (i + 1 >= 20) {
+            setGameOver(true);
+            return;
+          }
+          if (newBoard[i + 1][j] === 1) {
+            setGameOver(true);
+            return;
+          }
+        }
+      }
     }
   };
 
+  const clearLines = () => {
+    const newBoard = [...board];
+    let linesCleared = 0;
+    for (let i = 0; i < newBoard.length; i++) {
+      let isFull = true;
+      for (let j = 0; j < newBoard[i].length; j++) {
+        if (newBoard[i][j] === 0) {
+          isFull = false;
+          break;
+        }
+      }
+      if (isFull) {
+        newBoard.splice(i, 1);
+        newBoard.unshift([]);
+        for (let j = 0; j < 10; j++) {
+          newBoard[0].push(0);
+        }
+        linesCleared++;
+      }
+    }
+    setLines(lines + linesCleared);
+    setScore(score + linesCleared * 100);
+  };
+
   useEffect(() => {
-    document.addEventListener('keydown', handleKeyPress);
-    return () => document.removeEventListener('keydown', handleKeyPress);
-  }, [currentTetromino]);
+    const board = createBoard();
+    setBoard(board);
+    spawnPiece();
+    const intervalId = setInterval(() => {
+      if (gameOver) return;
+      movePiece('down');
+      checkCollision();
+      clearLines();
+    }, 1000);
+    return () => clearInterval(intervalId);
+  }, [gameOver]);
 
   return (
-    <div className="h-screen w-screen flex justify-center items-center">
-      <div className="grid grid-cols-10 grid-rows-20 gap-1 w-80 h-80 border-2 border-gray-500">
-        {board.map((row, rowIndex) => row.map((cell, cellIndex) => (
-          <div key={`${rowIndex}-${cellIndex}`} className={`w-8 h-8 ${cell === 1 ? 'bg-blue-500' : 'bg-gray-200'}`} />
-        )))}
+    <div className="w-full h-screen flex justify-center items-center">
+      <div className="w-1/2 h-1/2 border border-gray-500 flex flex-col">
+        <div className="h-1/6 flex justify-center items-center text-3xl font-bold">
+          {score}
+        </div>
+        <div className="h-5/6 flex justify-center items-center">
+          {board.map((row, index) => (
+            <div key={index} className="flex justify-center items-center">
+              {row.map((cell, cellIndex) => (
+                <div
+                  key={cellIndex}
+                  className={`w-10 h-10 border border-gray-500 ${
+                    cell === 1 ? 'bg-blue-500' : 'bg-gray-200'
+                  }`}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="h-1/6 flex justify-center items-center text-3xl font-bold">
+          {lines}
+        </div>
       </div>
-      <div className="ml-10">
-        <h1 className="text-3xl font-bold">Score: {score}</h1>
-        <h1 className="text-3xl font-bold">Lines: {lines}</h1>
-        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => setCurrentTetromino(rotateTetromino(currentTetromino))}>
-          <ArrowLeft size={24} />
-        </button>
-        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => moveTetromino('left')}>
-          <ArrowLeft size={24} />
-        </button>
-        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => moveTetromino('right')}>
-          <ArrowRight size={24} />
-        </button>
-        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => moveTetromino('down')}>
-          <ArrowDown size={24} />
-        </button>
+      <div className="w-1/4 h-1/2 border border-gray-500 flex flex-col justify-center items-center">
+        <div className="h-1/2 flex justify-center items-center text-3xl font-bold">
+          {nextPiece ? nextPiece.type : ''}
+        </div>
+        <div className="h-1/2 flex justify-center items-center">
+          <button
+            className="w-20 h-10 border border-gray-500 bg-gray-200 hover:bg-gray-300"
+            onClick={() => movePiece('left')}
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <button
+            className="w-20 h-10 border border-gray-500 bg-gray-200 hover:bg-gray-300"
+            onClick={() => movePiece('right')}
+          >
+            <ArrowRight size={20} />
+          </button>
+          <button
+            className="w-20 h-10 border border-gray-500 bg-gray-200 hover:bg-gray-300"
+            onClick={() => movePiece('down')}
+          >
+            <ArrowDown size={20} />
+          </button>
+          <button
+            className="w-20 h-10 border border-gray-500 bg-gray-200 hover:bg-gray-300"
+            onClick={rotatePiece}
+          >
+            Rotate
+          </button>
+        </div>
       </div>
     </div>
   );
