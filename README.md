@@ -1,7 +1,7 @@
 # Zerro AI Project
 
 ### 🎯 목표
-> 피파온라인 같은 게임 만들어야지
+> 테트리스 게임 만들기 진행
 
 ### 🛡️ QA Report
 PASS
