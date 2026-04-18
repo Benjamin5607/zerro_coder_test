@@ -4,194 +4,170 @@ const Tetris = () => {
   // 게임 상태
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
-  const [level, setLevel] = useState(1);
   const [grid, setGrid] = useState(Array(20).fill(null).map(() => Array(10).fill(null)));
   const [currentBlock, setCurrentBlock] = useState(null);
   const [nextBlock, setNextBlock] = useState(null);
+  const [blockX, setBlockX] = useState(0);
+  const [blockY, setBlockY] = useState(0);
 
-  // 블록 정의
-  const blocks = [
-    // I-Shape
-    [
-      [1, 1, 1, 1]
-    ],
-    // J-Shape
-    [
-      [1, 0, 0],
-      [1, 1, 1]
-    ],
-    // L-Shape
-    [
-      [0, 0, 1],
-      [1, 1, 1]
-    ],
-    // O-Shape
-    [
-      [1, 1],
-      [1, 1]
-    ],
-    // S-Shape
-    [
-      [0, 1, 1],
-      [1, 1, 0]
-    ],
-    // T-Shape
-    [
-      [0, 1, 0],
-      [1, 1, 1]
-    ],
-    // Z-Shape
-    [
-      [1, 1, 0],
-      [0, 1, 1]
-    ]
-  ];
+  // 블록 생성
+  const createBlock = () => {
+    const blockTypes = [
+      [[1, 1], [1, 1]],
+      [[1, 1, 1], [0, 1, 0]],
+      [[1, 1, 1], [1, 0, 0]],
+      [[1, 1, 1], [0, 0, 1]],
+      [[1, 1, 0], [0, 1, 1]],
+      [[0, 1, 1], [1, 1, 0]],
+      [[1, 0, 0], [1, 1, 1]],
+    ];
+    const randomIndex = Math.floor(Math.random() * blockTypes.length);
+    return blockTypes[randomIndex];
+  };
+
+  // 블록 이동
+  const moveBlock = (dx, dy) => {
+    if (gameOver) return;
+    let newX = blockX + dx;
+    let newY = blockY + dy;
+    if (newX < 0 || newX + currentBlock[0].length > 10) return;
+    if (newY < 0 || newY + currentBlock.length > 20) return;
+    for (let i = 0; i < currentBlock.length; i++) {
+      for (let j = 0; j < currentBlock[i].length; j++) {
+        if (currentBlock[i][j] === 1) {
+          if (grid[newY + i] && grid[newY + i][newX + j] !== undefined && grid[newY + i][newX + j] === 1) return;
+        }
+      }
+    }
+    setBlockX(newX);
+    setBlockY(newY);
+  };
+
+  // 블록 회전
+  const rotateBlock = () => {
+    if (gameOver) return;
+    const newBlock = currentBlock.map((row) => row.slice().reverse());
+    setBlockX(blockX);
+    setBlockY(blockY);
+    setCurrentBlock(newBlock);
+  };
 
   // 게임 시작
   const startGame = () => {
     setGameOver(false);
     setScore(0);
-    setLevel(1);
     setGrid(Array(20).fill(null).map(() => Array(10).fill(null)));
-    spawnBlock();
+    setCurrentBlock(createBlock());
+    setNextBlock(createBlock());
+    setBlockX(0);
+    setBlockY(0);
   };
 
-  // 블록 생성
-  const spawnBlock = () => {
-    const randomIndex = Math.floor(Math.random() * blocks.length);
-    const block = blocks[randomIndex];
-    setCurrentBlock(block);
-    setNextBlock(blocks[(randomIndex + 1) % blocks.length]);
-  };
-
-  // 블록 회전
-  const rotateBlock = () => {
-    if (!currentBlock) return;
-    const rotatedBlock = currentBlock.map((row) => row.slice().reverse());
-    setCurrentBlock(rotatedBlock);
-  };
-
-  // 블록 이동
-  const moveBlock = (dx, dy) => {
-    if (!currentBlock) return;
-    const newBlock = currentBlock.map((row, y) => row.map((cell, x) => {
-      const newX = x + dx;
-      const newY = y + dy;
-      if (newX < 0 || newX >= 10 || newY < 0 || newY >= 20) return 0;
-      if (grid[newY] && grid[newY][newX] !== null) return 0;
-      return cell;
-    }));
-    setCurrentBlock(newBlock);
-  };
-
-  // 충돌 감지
-  const checkCollision = () => {
-    if (!currentBlock) return;
-    for (let y = 0; y < currentBlock.length; y++) {
-      for (let x = 0; x < currentBlock[y].length; x++) {
-        if (currentBlock[y][x] === 1) {
-          const newX = x;
-          const newY = y + 1;
-          if (newY >= 20 || (grid[newY] && grid[newY][newX] !== null)) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
+  // 게임 종료
+  const endGame = () => {
+    setGameOver(true);
   };
 
   // 점수 계산
   const calculateScore = () => {
-    let score = 0;
-    for (let y = 0; y < 20; y++) {
-      let rowFull = true;
-      for (let x = 0; x < 10; x++) {
-        if (grid[y] && grid[y][x] === null) {
-          rowFull = false;
+    let newScore = score;
+    for (let i = 0; i < 20; i++) {
+      let isFullRow = true;
+      for (let j = 0; j < 10; j++) {
+        if (grid[i][j] !== 1) {
+          isFullRow = false;
           break;
         }
       }
-      if (rowFull) {
-        score += 100;
-        grid.splice(y, 1);
+      if (isFullRow) {
+        newScore += 100;
+        grid.splice(i, 1);
         grid.unshift(Array(10).fill(null));
       }
     }
-    setScore(score);
+    setScore(newScore);
   };
 
-  // 레벨 업
-  const levelUp = () => {
-    setLevel(level + 1);
-  };
-
-  // 게임 로직
+  // 게임 루프
   useEffect(() => {
+    if (gameOver) return;
     const intervalId = setInterval(() => {
-      if (gameOver) return;
-      moveBlock(0, 1);
-      if (checkCollision()) {
-        const newGrid = grid.slice();
-        for (let y = 0; y < currentBlock.length; y++) {
-          for (let x = 0; x < currentBlock[y].length; x++) {
-            if (currentBlock[y][x] === 1) {
-              const newX = x;
-              const newY = y;
-              if (newY >= 0 && newY < 20 && newX >= 0 && newX < 10) {
-                newGrid[newY][newX] = 1;
-              }
+      if (blockY + currentBlock.length >= 20) {
+        endGame();
+        return;
+      }
+      for (let i = 0; i < currentBlock.length; i++) {
+        for (let j = 0; j < currentBlock[i].length; j++) {
+          if (currentBlock[i][j] === 1) {
+            if (grid[blockY + i + 1] && grid[blockY + i + 1][blockX + j] !== undefined && grid[blockY + i + 1][blockX + j] === 1) {
+              endGame();
+              return;
             }
           }
         }
-        setGrid(newGrid);
-        calculateScore();
-        spawnBlock();
       }
-    }, 1000 / level);
+      setBlockY(blockY + 1);
+    }, 500);
     return () => clearInterval(intervalId);
-  }, [gameOver, level, currentBlock, grid]);
+  }, [gameOver, blockY, currentBlock, grid]);
+
+  // 블록 생성 및 이동
+  useEffect(() => {
+    if (gameOver) return;
+    if (!currentBlock) {
+      setCurrentBlock(createBlock());
+    }
+    if (blockY + currentBlock.length >= 20) {
+      for (let i = 0; i < currentBlock.length; i++) {
+        for (let j = 0; j < currentBlock[i].length; j++) {
+          if (currentBlock[i][j] === 1) {
+            grid[blockY + i][blockX + j] = 1;
+          }
+        }
+      }
+      setCurrentBlock(nextBlock);
+      setNextBlock(createBlock());
+      setBlockX(0);
+      setBlockY(0);
+      calculateScore();
+    }
+  }, [gameOver, currentBlock, blockY, grid, nextBlock]);
 
   // 사용자 입력 처리
   const handleKeyDown = (e) => {
-    switch (e.key) {
-      case 'ArrowLeft':
-        moveBlock(-1, 0);
-        break;
-      case 'ArrowRight':
-        moveBlock(1, 0);
-        break;
-      case 'ArrowDown':
-        moveBlock(0, 1);
-        break;
-      case 'ArrowUp':
-        rotateBlock();
-        break;
-      default:
-        break;
+    if (e.key === 'ArrowLeft') {
+      moveBlock(-1, 0);
+    } else if (e.key === 'ArrowRight') {
+      moveBlock(1, 0);
+    } else if (e.key === 'ArrowDown') {
+      moveBlock(0, 1);
+    } else if (e.key === 'ArrowUp') {
+      rotateBlock();
     }
   };
 
   // 렌더링
   return (
     <div className="h-screen w-screen flex justify-center items-center">
-      <div className="grid grid-rows-20 grid-cols-10 gap-1 w-64 h-64 border border-gray-400">
+      <div className="grid grid-cols-10 grid-rows-20 gap-1 w-64 h-64 border border-gray-400">
         {grid.map((row, y) => row.map((cell, x) => (
           <div key={`${y},${x}`} className={`w-6 h-6 ${cell === 1 ? 'bg-blue-500' : 'bg-gray-200'}`} />
         )))}
+        {currentBlock && currentBlock.map((row, y) => row.map((cell, x) => (
+          <div key={`${y},${x}`} className={`w-6 h-6 ${cell === 1 ? 'bg-red-500' : 'bg-gray-200'} absolute top-0 left-0 translate-x-${blockX * 8}rem translate-y-${blockY * 8}rem`} />
+        )))}
       </div>
       <div className="ml-4">
-        <h1 className="text-2xl font-bold">Tetris</h1>
-        <p className="text-xl">Score: {score}</p>
-        <p className="text-xl">Level: {level}</p>
-        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={startGame}>Start Game</button>
-      </div>
-      <div className="absolute top-0 left-0">
-        <div className="grid grid-rows-4 grid-cols-4 gap-1 w-16 h-16 border border-gray-400">
+        <p>Score: {score}</p>
+        <p>Next Block:</p>
+        <div className="grid grid-cols-3 grid-rows-3 gap-1 w-24 h-24 border border-gray-400">
           {nextBlock && nextBlock.map((row, y) => row.map((cell, x) => (
-            <div key={`${y},${x}`} className={`w-4 h-4 ${cell === 1 ? 'bg-blue-500' : 'bg-gray-200'}`} />
+            <div key={`${y},${x}`} className={`w-6 h-6 ${cell === 1 ? 'bg-green-500' : 'bg-gray-200'}`} />
           )))}
         </div>
+        <button className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={startGame}>
+          Start Game
+        </button>
       </div>
     </div>
   );
