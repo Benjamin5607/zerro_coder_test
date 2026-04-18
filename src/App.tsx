@@ -1,90 +1,96 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
 
 const App = () => {
-  const [gameStarted, setGameStarted] = useState(false);
-  const [blocks, setBlocks] = useState([]);
-  const [defenses, setDefenses] = useState(null);
+  const [blocks, setBlocks] = useState<Array<{ id: number; color: string } | null>>([]);
+  const [isMoving, setIsMoving] = useState(false);
+  const [matchesGoal, setMatchesGoal] = useState(false);
+  const [hasNullDefenses, setHasNullDefenses] = useState(false);
 
   useEffect(() => {
-    if (gameStarted) {
-      generateBlocks();
-      generateDefenses();
-    }
-  }, [gameStarted]);
+    const intervalId = setInterval(() => {
+      if (!isMoving) {
+        setIsMoving(true);
+        const newBlocks: Array<{ id: number; color: string } | null> = [];
+        for (let i = 0; i < 10; i++) {
+          if (Math.random() < 0.5) {
+            newBlocks.push({ id: i, color: 'blue' });
+          } else {
+            newBlocks.push(null);
+          }
+        }
+        setBlocks(newBlocks);
+      }
+    }, 1000);
+    return () => clearInterval(intervalId);
+  }, [isMoving]);
 
-  const generateBlocks = () => {
-    const newBlocks = [];
-    for (let i = 0; i < 10; i++) {
-      newBlocks.push({
-        id: i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-      });
-    }
-    setBlocks(newBlocks);
-  };
-
-  const generateDefenses = () => {
-    if (defenses === null) {
-      setDefenses([
-        { id: 1, type: 'wall' },
-        { id: 2, type: 'shield' },
-      ]);
-    }
-  };
-
-  const startGame = () => {
-    setGameStarted(true);
-  };
-
-  const renderBlocks = () => {
+  useEffect(() => {
     if (blocks.length > 0) {
-      return blocks.map((block) => (
-        <div
-          key={block.id}
-          style={{
-            position: 'absolute',
-            left: `${block.x}%`,
-            top: `${block.y}%`,
-            width: '50px',
-            height: '50px',
-            backgroundColor: 'blue',
-          }}
-        />
-      ));
-    } else {
-      return <div className="text-center text-3xl">No blocks</div>;
+      const hasNull = blocks.some((block) => block === null);
+      setHasNullDefenses(hasNull);
+    }
+  }, [blocks]);
+
+  const handleMove = () => {
+    if (!isMoving && blocks.length > 0) {
+      setIsMoving(true);
+      const newBlocks = blocks.map((block, index) => {
+        if (block !== null && index < blocks.length - 1) {
+          return { ...block, id: block.id + 1 };
+        }
+        return block;
+      });
+      setBlocks(newBlocks);
     }
   };
 
-  const renderDefenses = () => {
-    if (defenses !== null && defenses.length > 0) {
-      return defenses.map((defense) => (
-        <div key={defense.id}>
-          {defense.type}
-        </div>
-      ));
-    } else {
-      return <div className="text-center text-3xl">No defenses</div>;
+  const handleCheckGoal = () => {
+    if (blocks.length > 0) {
+      const goalBlock = blocks.find((block) => block !== null && block.id >= 9);
+      if (goalBlock) {
+        setMatchesGoal(true);
+      }
     }
   };
 
   return (
-    <div className="h-screen w-screen bg-gray-100 flex flex-col items-center justify-center">
-      {gameStarted ? (
-        <div className="relative w-full h-full">
-          {renderBlocks()}
-          {renderDefenses()}
+    <div className="w-full h-screen flex flex-col items-center justify-center bg-gray-100">
+      <div className="w-80 h-80 flex flex-col items-center justify-center space-y-2">
+        {blocks.map((block, index) => (
+          <div key={index} className="w-10 h-10">
+            {block !== null && (
+              <div className="w-full h-full bg-blue-500 flex items-center justify-center">
+                <div className="text-white" style={{ fontSize: 20 }}>&#8592;</div>
+              </div>
+            )}
+            {block === null && (
+              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                <div className="text-gray-500" style={{ fontSize: 20 }}>&#9658;</div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      <button
+        className="w-20 h-10 bg-blue-500 text-white rounded-lg"
+        onClick={handleMove}
+      >
+        Move
+      </button>
+      <button
+        className="w-20 h-10 bg-green-500 text-white rounded-lg"
+        onClick={handleCheckGoal}
+      >
+        Check Goal
+      </button>
+      {matchesGoal && (
+        <div className="w-full h-10 bg-green-500 text-white flex items-center justify-center">
+          Goal Reached!
         </div>
-      ) : (
-        <div className="text-center">
-          <button
-            onClick={startGame}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Start Game
-          </button>
+      )}
+      {hasNullDefenses && (
+        <div className="w-full h-10 bg-red-500 text-white flex items-center justify-center">
+          Null Defenses Detected!
         </div>
       )}
     </div>
