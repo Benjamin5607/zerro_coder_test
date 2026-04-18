@@ -1,68 +1,71 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowDown } from 'lucide-react';
+import { Play } from 'lucide-react';
 
-const CONTAINER_WIDTH = 256;
-const CONTAINER_HEIGHT = 384;
-const BLOCK_SIZE = 48;
-const FALL_SPEED = 2;
-const UPDATE_INTERVAL = 50;
-const BLOCK_COUNT = 5;
+const GRID_WIDTH = 10;
+const GRID_HEIGHT = 20;
+const BLOCK_SIZE = 20;
+const COLORS = ['#FF6B6B', '#6BCB77', '#4D96FF', '#FFC75F', '#9D4EDD'];
 
-const App = () => {
-  const [blocks, setBlocks] = useState(
-    Array.from({ length: BLOCK_COUNT }, (_, i) => ({
-      id: i,
-      top: Math.random() * (CONTAINER_HEIGHT - BLOCK_SIZE),
-      left: Math.random() * (CONTAINER_WIDTH - BLOCK_SIZE),
-    }))
-  );
-  const [running, setRunning] = useState(true);
+const generateBlock = (id) => ({
+  id,
+  x: Math.floor(Math.random() * GRID_WIDTH),
+  y: 0,
+  color: COLORS[Math.floor(Math.random() * COLORS.length)],
+});
+
+export default function App() {
+  const [blocks, setBlocks] = useState([]);
+  const [running, setRunning] = useState(false);
 
   useEffect(() => {
     if (!running) return;
-    const id = setInterval(() => {
-      setBlocks(prev =>
-        prev.map(b => {
-          let newTop = b.top + FALL_SPEED;
-          if (newTop > CONTAINER_HEIGHT - BLOCK_SIZE) {
-            newTop = 0;
-            return { ...b, top: newTop, left: Math.random() * (CONTAINER_WIDTH - BLOCK_SIZE) };
-          }
-          return { ...b, top: newTop };
-        })
-      );
-    }, UPDATE_INTERVAL);
-    return () => clearInterval(id);
+    const interval = setInterval(() => {
+      setBlocks((prev) => {
+        const newBlocks = prev.map((b) => ({ ...b, y: b.y + 1 }));
+        const falling = newBlocks.filter((b) => b.y < GRID_HEIGHT);
+        const newBlock = generateBlock(Date.now());
+        return [...falling, newBlock];
+      });
+    }, 500);
+    return () => clearInterval(interval);
   }, [running]);
 
+  const handleStart = () => setRunning(true);
+
   return (
-    <div className="flex flex-col items-center mt-8">
-      <div
-        className="relative bg-gray-200 border-2 border-gray-400"
-        style={{ width: CONTAINER_WIDTH, height: CONTAINER_HEIGHT }}
-      >
-        {blocks.map(b => (
-          <div
-            key={b.id}
-            className="absolute bg-blue-500"
-            style={{
-              width: BLOCK_SIZE,
-              height: BLOCK_SIZE,
-              top: b.top,
-              left: b.left,
-            }}
-          />
-        ))}
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
+      <div className="mb-4">
+        <button
+          onClick={handleStart}
+          className="flex items-center px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 transition"
+        >
+          <Play className="mr-2" size={20} />
+          Start
+        </button>
       </div>
-      <button
-        className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center"
-        onClick={() => setRunning(!running)}
+      <div
+        className="relative"
+        style={{
+          width: `${GRID_WIDTH * BLOCK_SIZE}px`,
+          height: `${GRID_HEIGHT * BLOCK_SIZE}px`,
+          border: '2px solid white',
+        }}
       >
-        {running ? <ArrowDown className="mr-2" /> : null}
-        {running ? 'Pause' : 'Resume'}
-      </button>
+        {blocks?.length &&
+          blocks.map((block) => (
+            <div
+              key={block.id}
+              className="absolute"
+              style={{
+                width: `${BLOCK_SIZE}px`,
+                height: `${BLOCK_SIZE}px`,
+                left: `${block.x * BLOCK_SIZE}px`,
+                top: `${block.y * BLOCK_SIZE}px`,
+                backgroundColor: block.color,
+              }}
+            />
+          ))}
+      </div>
     </div>
   );
-};
-
-export default App;
+}
