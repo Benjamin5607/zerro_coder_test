@@ -1,7 +1,7 @@
 # Zerro AI Project
 
 ### 🎯 목표
-> 로그인 필요 없는 축구 게임 만들어봐
+> 피파온라인 같은 게임 만들어야지
 
 ### 🛡️ QA Report
 PASS

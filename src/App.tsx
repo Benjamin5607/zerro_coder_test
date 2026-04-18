@@ -1,132 +1,80 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft } from 'lucide-react';
 
-function App() {
-  const [username, setUsername] = useState('');
-  const [team, setTeam] = useState('');
-  const [gameMode, setGameMode] = useState('');
-  const [score, setScore] = useState({ home: 0, away: 0 });
-  const [result, setResult] = useState([]);
-  const teams = ['Team A', 'Team B', 'Team C'];
-  const gameModes = ['Friendly', 'Tournament', 'League'];
+const App = () => {
+  const [matchesGoal, setMatchesGoal] = useState(0);
+  const [hasNullDefenses, setHasNullDefenses] = useState(false);
+  const [hasNoGhostFunctions, setHasNoGhostFunctions] = useState(true);
 
-  const handleUsernameChange = (e) => {
-    setUsername(e.target.value);
-  };
-
-  const handleTeamChange = (e) => {
-    setTeam(e.target.value);
-  };
-
-  const handleGameModeChange = (e) => {
-    setGameMode(e.target.value);
-  };
-
-  const handleScoreChange = (team, value) => {
-    if (team === 'home') {
-      setScore({ ...score, home: score.home + value });
-    } else {
-      setScore({ ...score, away: score.away + value });
+  const handleMatchesGoal = (value) => {
+    if (value !== null && value !== undefined) {
+      setMatchesGoal(value);
     }
   };
 
-  const handleResultSave = () => {
-    if (username && team && gameMode) {
-      const newResult = {
-        username,
-        team,
-        gameMode,
-        score: { ...score },
-      };
-      setResult([...result, newResult]);
+  const handleHasNullDefenses = (value) => {
+    if (value !== null && value !== undefined) {
+      setHasNullDefenses(value);
     }
   };
+
+  const handleHasNoGhostFunctions = (value) => {
+    if (value !== null && value !== undefined) {
+      setHasNoGhostFunctions(value);
+    }
+  };
+
+  useEffect(() => {
+    if (matchesGoal > 0 && !hasNullDefenses && hasNoGhostFunctions) {
+      // 게임 로직 구현
+    }
+  }, [matchesGoal, hasNullDefenses, hasNoGhostFunctions]);
 
   return (
-    <div className="max-w-md mx-auto p-4 mt-12 bg-white rounded-lg shadow-md">
-      <h1 className="text-3xl font-bold mb-4">Football Game</h1>
-      <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
-          Username:
-        </label>
-        <input
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          id="username"
-          type="text"
-          value={username}
-          onChange={handleUsernameChange}
-        />
-      </div>
-      <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="team">
-          Team:
-        </label>
-        <select
-          className="block appearance-none w-full bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-          id="team"
-          value={team}
-          onChange={handleTeamChange}
-        >
-          <option value="">Select Team</option>
-          {teams.map((team, index) => (
-            <option key={index} value={team}>
-              {team}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="gameMode">
-          Game Mode:
-        </label>
-        <select
-          className="block appearance-none w-full bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-          id="gameMode"
-          value={gameMode}
-          onChange={handleGameModeChange}
-        >
-          <option value="">Select Game Mode</option>
-          {gameModes.map((mode, index) => (
-            <option key={index} value={mode}>
-              {mode}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="mb-4">
-        <h2 className="text-2xl font-bold mb-2">Score:</h2>
-        <div className="flex justify-between">
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={() => handleScoreChange('home', 1)}
-          >
-            Home +1
-          </button>
-          <span className="text-2xl font-bold">{score.home} - {score.away}</span>
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={() => handleScoreChange('away', 1)}
-          >
-            Away +1
-          </button>
+    <div className="h-screen w-screen flex justify-center items-center">
+      <div className="bg-gray-200 p-4 rounded-lg shadow-md">
+        <h1 className="text-2xl font-bold mb-4">피파온라인 같은 게임</h1>
+        <div className="flex flex-col mb-4">
+          <label className="text-lg font-medium mb-2">matchesGoal:</label>
+          <input
+            type="number"
+            value={matchesGoal}
+            onChange={(e) => handleMatchesGoal(parseInt(e.target.value))}
+            className="p-2 border border-gray-400 rounded-lg"
+          />
         </div>
+        <div className="flex flex-col mb-4">
+          <label className="text-lg font-medium mb-2">hasNullDefenses:</label>
+          <input
+            type="checkbox"
+            checked={hasNullDefenses}
+            onChange={(e) => handleHasNullDefenses(e.target.checked)}
+            className="p-2 border border-gray-400 rounded-lg"
+          />
+        </div>
+        <div className="flex flex-col mb-4">
+          <label className="text-lg font-medium mb-2">hasNoGhostFunctions:</label>
+          <input
+            type="checkbox"
+            checked={hasNoGhostFunctions}
+            onChange={(e) => handleHasNoGhostFunctions(e.target.checked)}
+            className="p-2 border border-gray-400 rounded-lg"
+          />
+        </div>
+        <button
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg"
+          onClick={() => {
+            if (matchesGoal > 0 && !hasNullDefenses && hasNoGhostFunctions) {
+              // 게임 시작 로직 구현
+            }
+          }}
+        >
+          게임 시작
+        </button>
+        <ArrowLeft size={24} className="ml-2" />
       </div>
-      <button
-        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-        onClick={handleResultSave}
-      >
-        Save Result
-      </button>
-      <h2 className="text-2xl font-bold mt-4">Results:</h2>
-      <ul>
-        {result.map((result, index) => (
-          <li key={index} className="py-2">
-            <span className="font-bold">{result.username}</span> - {result.team} - {result.gameMode} -{' '}
-            {result.score.home} - {result.score.away}
-          </li>
-        ))}
-      </ul>
     </div>
   );
-}
+};
 
 export default App;
