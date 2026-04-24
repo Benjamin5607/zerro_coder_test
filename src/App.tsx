@@ -81,14 +81,23 @@ export default function App() {
           return [...falling, newBlock];
         }
         const newBlock = { ...currentBlock, y: currentBlock.y + 1 };
+        if (checkCollision(blocks, newBlock)) {
+          setRunning(false);
+          return falling;
+        }
         setCurrentBlock(newBlock);
         return [...falling, newBlock];
       });
-    }, 500);
+    }, 1000);
     return () => clearInterval(interval);
-  }, [running, currentBlock]);
+  }, [running, currentBlock, blocks]);
 
-  const handleStart = () => setRunning(true);
+  const handleStart = () => {
+    setRunning(true);
+    setBlocks([]);
+    setScore(0);
+  };
+
   const handleMoveLeft = () => {
     if (currentBlock) {
       const newBlock = { ...currentBlock, x: currentBlock.x - 1 };
@@ -97,26 +106,31 @@ export default function App() {
       setCurrentBlock(newBlock);
     }
   };
+
   const handleMoveRight = () => {
     if (currentBlock) {
       const newBlock = { ...currentBlock, x: currentBlock.x + 1 };
-      if (newBlock.x + currentBlock.shape[0].length > GRID_WIDTH) return;
+      if (newBlock.x + newBlock.shape[0].length > GRID_WIDTH) return;
       if (checkCollision(blocks, newBlock)) return;
       setCurrentBlock(newBlock);
     }
   };
+
   const handleMoveDown = () => {
     if (currentBlock) {
       const newBlock = { ...currentBlock, y: currentBlock.y + 1 };
-      if (newBlock.y + currentBlock.shape.length > GRID_HEIGHT) {
-        // Game Over
+      if (newBlock.y + newBlock.shape.length > GRID_HEIGHT) {
         setRunning(false);
         return;
       }
-      if (checkCollision(blocks, newBlock)) return;
+      if (checkCollision(blocks, newBlock)) {
+        setRunning(false);
+        return;
+      }
       setCurrentBlock(newBlock);
     }
   };
+
   const handleRotate = () => {
     if (currentBlock) {
       const newShape = currentBlock.shape.slice().reverse().map((point) => [point[1], -point[0]]);
@@ -124,6 +138,7 @@ export default function App() {
       setCurrentBlock(newBlock);
     }
   };
+
   const handleScore = () => {
     setScore(updateScore(score, blocks));
   };

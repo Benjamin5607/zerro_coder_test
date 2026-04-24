@@ -1,49 +1,23 @@
-
 // src/utils/constants.ts
-export const GAME_WIDTH = 10;
-export const GAME_HEIGHT = 20;
-export const BLOCK_SIZE = 30;
-export const COLORS = [
-   'red',
-   'orange',
-   'yellow',
-   'green',
-   'blue',
-   'indigo',
-   'violet'
-];
-export const SHAPES = {
-   I: [
-      [1, 1, 1, 1]
-   ],
-   J: [
-      [1, 0, 0],
-      [1, 1, 1]
-   ],
-   L: [
-      [0, 0, 1],
-      [1, 1, 1]
-   ],
-   O: [
-      [1, 1],
-      [1, 1]
-   ],
-   S: [
-      [0, 1, 1],
-      [1, 1, 0]
-   ],
-   T: [
-      [0, 1, 0],
-      [1, 1, 1]
-   ],
-   Z: [
-      [1, 1, 0],
-      [0, 1, 1]
-   ]
+// 이 파일은 신규 생성 대상입니다.
+// 현재 리파지토리의 파일들을 전부 리뷰하고 문제점을 파악해서 고쳐.
+
+// 색상 상수
+export const COLORS = {
+  PRIMARY: '#3498db',
+  SECONDARY: '#f1c40f',
+  SUCCESS: '#2ecc71',
+  DANGER: '#e74c3c',
+  WARNING: '#f39c12',
+  INFO: '#1abc9c',
+  LIGHT: '#ecf0f1',
+  DARK: '#2c3e50',
+  PURPLE: '#9b59b6' // 보라색
 };
-export const DIRECTIONS = {
-   UP: [0, -1],
-   DOWN: [0, 1],
-   LEFT: [-1, 0],
-   RIGHT: [1, 0]
+
+// 기타 상수
+export const OTHER_CONSTANTS = {
+  MAX_LENGTH: 255,
+  MIN_LENGTH: 3,
+  DEFAULT_PAGE_SIZE: 10
 };
