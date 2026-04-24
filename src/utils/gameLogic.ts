@@ -1,15 +1,55 @@
 
 // gameLogic.ts
-// 게임 로직을 담당하는 파일입니다.
-
-// 막대기의 색상이 바뀐 것을 확인합니다.
-const stickColor = '보라색';
-
-// 게임 로직을 처리하는 함수입니다.
-function gameLogic() {
-    console.log('게임 로직을 처리합니다.');
-    console.log(`현재 막대기의 색상은 ${stickColor}입니다.`);
+interface Block {
+   x: number;
+   y: number;
 }
 
-// 게임 로직 함수를 호출합니다.
-gameLogic();
+class Game {
+   private block: Block;
+   private rotation: number;
+
+   constructor() {
+      this.block = { x: 0, y: 0 };
+      this.rotation = 0;
+   }
+
+   moveBlock(direction: string) {
+      switch (direction) {
+         case 'up':
+            this.block.y -= 1;
+            break;
+         case 'down':
+            this.block.y += 1;
+            break;
+         case 'left':
+            this.block.x -= 1;
+            break;
+         case 'right':
+            this.block.x += 1;
+            break;
+      }
+   }
+
+   rotateBlock() {
+      this.rotation += 1;
+   }
+
+   getBlockPosition() {
+      return this.block;
+   }
+
+   getBlockRotation() {
+      return this.rotation;
+   }
+}
+
+const game = new Game();
+
+// 예시 사용법
+game.moveBlock('right'); // 블록을 오른쪽으로 이동
+game.moveBlock('up'); // 블록을 위로 이동
+game.rotateBlock(); // 블록을 회전
+
+console.log(game.getBlockPosition()); // 블록의 현재 위치
+console.log(game.getBlockRotation()); // 블록의 현재 회전 상태
