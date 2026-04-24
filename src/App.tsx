@@ -23,6 +23,39 @@ const generateBlock = (id, shape) => ({
   shape
 });
 
+const checkCollision = (blocks, newBlock) => {
+  for (let i = 0; i < blocks.length; i++) {
+    for (let j = 0; j < blocks[i].shape.length; j++) {
+      if (
+        blocks[i].x + blocks[i].shape[j][0] === newBlock.x + newBlock.shape[0][0] &&
+        blocks[i].y + blocks[i].shape[j][1] === newBlock.y + newBlock.shape[0][1]
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
+
+const checkGameOver = (blocks) => {
+  for (let i = 0; i < blocks.length; i++) {
+    if (blocks[i].y + blocks[i].shape.length > GRID_HEIGHT) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const updateScore = (score, blocks) => {
+  let newScore = score;
+  for (let i = 0; i < blocks.length; i++) {
+    if (blocks[i].y + blocks[i].shape.length > GRID_HEIGHT) {
+      newScore++;
+    }
+  }
+  return newScore;
+};
+
 export default function App() {
   const [blocks, setBlocks] = useState([]);
   const [running, setRunning] = useState(false);
@@ -60,6 +93,7 @@ export default function App() {
     if (currentBlock) {
       const newBlock = { ...currentBlock, x: currentBlock.x - 1 };
       if (newBlock.x < 0) return;
+      if (checkCollision(blocks, newBlock)) return;
       setCurrentBlock(newBlock);
     }
   };
@@ -67,6 +101,7 @@ export default function App() {
     if (currentBlock) {
       const newBlock = { ...currentBlock, x: currentBlock.x + 1 };
       if (newBlock.x + currentBlock.shape[0].length > GRID_WIDTH) return;
+      if (checkCollision(blocks, newBlock)) return;
       setCurrentBlock(newBlock);
     }
   };
@@ -78,6 +113,7 @@ export default function App() {
         setRunning(false);
         return;
       }
+      if (checkCollision(blocks, newBlock)) return;
       setCurrentBlock(newBlock);
     }
   };
@@ -89,7 +125,7 @@ export default function App() {
     }
   };
   const handleScore = () => {
-    setScore(score + 1);
+    setScore(updateScore(score, blocks));
   };
 
   return (
