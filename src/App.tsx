@@ -5,17 +5,29 @@ const GRID_WIDTH = 10;
 const GRID_HEIGHT = 20;
 const BLOCK_SIZE = 20;
 const COLORS = ['#FF6B6B', '#6BCB77', '#4D96FF', '#FFC75F', '#9D4EDD'];
+const SHAPES = [
+  [[0, 0], [1, 0], [2, 0], [3, 0]], // I
+  [[0, 0], [1, 0], [0, 1], [1, 1]], // O
+  [[0, 0], [1, 0], [2, 0], [2, 1]], // J
+  [[0, 1], [1, 1], [2, 1], [2, 0]], // L
+  [[1, 0], [2, 0], [0, 1], [1, 1]], // S
+  [[0, 0], [1, 0], [1, 1], [2, 1]], // Z
+  [[0, 1], [1, 1], [1, 0], [2, 0]] // T
+];
 
-const generateBlock = (id) => ({
+const generateBlock = (id, shape) => ({
   id,
-  x: Math.floor(Math.random() * GRID_WIDTH),
+  x: Math.floor(Math.random() * (GRID_WIDTH - shape[0].length)),
   y: 0,
   color: COLORS[Math.floor(Math.random() * COLORS.length)],
+  shape
 });
 
 export default function App() {
   const [blocks, setBlocks] = useState([]);
   const [running, setRunning] = useState(false);
+  const [currentBlock, setCurrentBlock] = useState(null);
+  const [score, setScore] = useState(0);
 
   useEffect(() => {
     if (!running) return;
@@ -23,14 +35,58 @@ export default function App() {
       setBlocks((prev) => {
         const newBlocks = prev.map((b) => ({ ...b, y: b.y + 1 }));
         const falling = newBlocks.filter((b) => b.y < GRID_HEIGHT);
-        const newBlock = generateBlock(Date.now());
+        if (currentBlock && currentBlock.y + currentBlock.shape.length > GRID_HEIGHT) {
+          // Game Over
+          setRunning(false);
+          return falling;
+        }
+        if (!currentBlock) {
+          const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+          const newBlock = generateBlock(Date.now(), shape);
+          setCurrentBlock(newBlock);
+          return [...falling, newBlock];
+        }
+        const newBlock = { ...currentBlock, y: currentBlock.y + 1 };
+        setCurrentBlock(newBlock);
         return [...falling, newBlock];
       });
     }, 500);
     return () => clearInterval(interval);
-  }, [running]);
+  }, [running, currentBlock]);
 
   const handleStart = () => setRunning(true);
+  const handleMoveLeft = () => {
+    if (currentBlock) {
+      const newBlock = { ...currentBlock, x: currentBlock.x - 1 };
+      if (newBlock.x < 0) return;
+      setCurrentBlock(newBlock);
+    }
+  };
+  const handleMoveRight = () => {
+    if (currentBlock) {
+      const newBlock = { ...currentBlock, x: currentBlock.x + 1 };
+      if (newBlock.x + currentBlock.shape[0].length > GRID_WIDTH) return;
+      setCurrentBlock(newBlock);
+    }
+  };
+  const handleMoveDown = () => {
+    if (currentBlock) {
+      const newBlock = { ...currentBlock, y: currentBlock.y + 1 };
+      if (newBlock.y + currentBlock.shape.length > GRID_HEIGHT) {
+        // Game Over
+        setRunning(false);
+        return;
+      }
+      setCurrentBlock(newBlock);
+    }
+  };
+  const handleRotate = () => {
+    if (currentBlock) {
+      const newShape = currentBlock.shape.slice().reverse().map((point) => [point[1], -point[0]]);
+      const newBlock = { ...currentBlock, shape: newShape };
+      setCurrentBlock(newBlock);
+    }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
@@ -65,7 +121,27 @@ export default function App() {
               }}
             />
           ))}
+        {currentBlock && currentBlock.shape.map((point) => (
+          <div
+            key={`${currentBlock.id}-${point[0]}-${point[1]}`}
+            className="absolute"
+            style={{
+              width: `${BLOCK_SIZE}px`,
+              height: `${BLOCK_SIZE}px`,
+              left: `${(currentBlock.x + point[0]) * BLOCK_SIZE}px`,
+              top: `${(currentBlock.y + point[1]) * BLOCK_SIZE}px`,
+              backgroundColor: currentBlock.color,
+            }}
+          />
+        ))}
       </div>
+      <div className="mt-4">
+        <button onClick={handleMoveLeft} className="mr-2">Left</button>
+        <button onClick={handleMoveRight} className="mr-2">Right</button>
+        <button onClick={handleMoveDown} className="mr-2">Down</button>
+        <button onClick={handleRotate}>Rotate</button>
+      </div>
+      <div className="mt-4">Score: {score}</div>
     </div>
   );
 }
