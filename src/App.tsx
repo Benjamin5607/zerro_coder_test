@@ -87,6 +87,9 @@ export default function App() {
       setCurrentBlock(newBlock);
     }
   };
+  const handleScore = () => {
+    setScore(score + 1);
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
@@ -142,6 +145,9 @@ export default function App() {
         <button onClick={handleRotate}>Rotate</button>
       </div>
       <div className="mt-4">Score: {score}</div>
+      <div className="mt-4">
+        <button onClick={handleScore}>Increase Score</button>
+      </div>
     </div>
   );
 }
