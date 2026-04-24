@@ -33,6 +33,7 @@ export default function App() {
     if (!running) return;
     const interval = setInterval(() => {
       setBlocks((prev) => {
+        if (!prev) return [];
         const newBlocks = prev.map((b) => ({ ...b, y: b.y + 1 }));
         const falling = newBlocks.filter((b) => b.y < GRID_HEIGHT);
         if (currentBlock && currentBlock.y + currentBlock.shape.length > GRID_HEIGHT) {
