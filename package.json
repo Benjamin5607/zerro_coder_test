@@ -1,0 +1,35 @@
+{
+    "name": "react-ts-project",
+    "version": "1.0.0",
+    "description": "React and TypeScript 기반의 프로젝트 초기 뼈대",
+    "main": "src/index.tsx",
+    "scripts": {
+        "start": "react-scripts start", 
+        "build": "react-scripts build",
+        "test": "react-scripts test",
+        "clean": "rm -rf build"
+    },
+    "dependencies": {
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-scripts": "5.0.1" 
+    },
+    "devDependencies": {
+        "@types/react": "^18.2.66",
+        "@types/react-dom": "^18.2.22",
+        "typescript": "^4.2.2",
+        "react-scripts-dev": "5.0.1"
+    },
+    "browserslist": {
+        "production": [
+            ">0.2%",
+            "not dead",
+            "not op_mini all"
+        ],
+        "development": [
+            "last 1 chrome version",
+            "last 1 firefox version",
+            "last 1 safari version"
+        ]
+    }
+}
